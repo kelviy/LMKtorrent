@@ -1,6 +1,7 @@
 from socket import AF_INET, SOCK_STREAM, socket
 
 # 127.0.0.1 - ip address for loop back interface
+# SOCK_DGRAM - UDP
 IP = "127.0.0.1"
 PORT = 12500
 
