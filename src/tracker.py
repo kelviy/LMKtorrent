@@ -112,9 +112,9 @@ class SeederInfo():
         for seeder in self.seeder_list:
             if seeder[0] == seeder_address:
                 seeder[1] = datetime.now()
-                return
-        print("Uknown Seeder. Unable to Update")
-        return
+                return true
+        print("Unknown Seeder. Unable to Update")
+        return false
 
     def remove_inactive(self):
         for index, seeder in enumerate(self.seeder_list):
