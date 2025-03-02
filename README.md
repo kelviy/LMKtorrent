@@ -28,4 +28,4 @@ CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 Ma
 
 ## General Notes:
 1. You can optionally create a virtual environment since we are using python. This will help if we are using additional packages 
-
+2. Need to add a checker to see if all data was sent correctly
