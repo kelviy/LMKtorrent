@@ -27,5 +27,5 @@ CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 Ma
 3. Listens for leechers and sends meta data.
 
 ## General Notes:
-1. You can optionally create a virtual environment since we are using python. This will help if we are using additional packages (which we probably won't)
+1. You can optionally create a virtual environment since we are using python. This will help if we are using additional packages 
 
