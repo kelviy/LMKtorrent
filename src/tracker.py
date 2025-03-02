@@ -1,8 +1,45 @@
 from datetime import datetime, timedelta
+from socket import socket, AF_INET, SOCK_DGRAM
 
 def main():
+    def exec_request(request):
+        match request:
+            case Request.ADD_SEEDER:
+                ip = connection_socket.recv(1024).decode()
+                port = connection_socket.recv(1024).decode()
+
+                seeder_info.add_seeder(ip, port)
+
+                connection_socket.send(Request.SUCCESS.encode())
+
+    IP = "127.0.0.1"
+    PORT = 12500
+    seeder_info = SeederInfo()
+
+    server_socket = socket(AF_INET, SOCK_DGRAM)
+    server_socket.bind((IP, PORT))
+    server_socket.listen(5)
+
+    print("Tracker is up")
+
     while True:
-        print("listening. Exit now... infinite loop")
+        connection_socket, addr = server_socket.accept()
+        print("Connect Received from", addr)
+
+        request = connection_socket.recv(1024).decode()
+
+        exec_request(request)
+
+        connection_socket.send(Request.SUCCESS.encode())
+        connection_socket.close()
+
+            
+class Request():
+    ADD_SEEDER = 'add_seeder'
+    UPDATE_SEEDER = 'update_seeder'
+    REQUEST_METADATA = 'request_meta'
+
+    SUCCESS = 'success'
 
 class Address():
     """
@@ -21,7 +58,7 @@ class Address():
         return self.ip, self.port
 
 class MetaData():
-    """
+    """ 
     MetaData that is sent to the leecher
     """
     # 12.7 MB (below number is in bytes)
