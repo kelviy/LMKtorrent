@@ -13,24 +13,26 @@ def main():
 def get_metadata(tracker=Address("127.0.0.1", 12500)):
     """
     Downloads metadata from specified tracker information
+
+  
     """
     pass
 
 
 def download_file(seeder=Address("127.0.0.1", 12500)):
-    client = socket(AF_INET, SOCK_STREAM)
-    client.connect(seeder.get_con())
+    soc = socket(AF_INET, SOCK_STREAM)
+    soc.connect(seeder.get_con())
 
-    file_part = client.recv(1024)
+    file_part = soc.recv(1024)
 
     sentence = input("Input lowercase sentence: ")
-    clientSocket.send(sentence.encode())
+    soc.send(sentence.encode())
 
-    modifiedSentence = clientSocket.recv(1024).decode()
+    modifiedSentence = soc.recv(1024).decode()
 
     print(f"From Server: {modifiedSentence}")
 
-    clientSocket.close()
+    soc.close()
 
 if __name__ == "__main__":
     main()
