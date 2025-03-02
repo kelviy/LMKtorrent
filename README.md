@@ -2,7 +2,7 @@
 CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 March 2025
 
 # Specifications (so far - simplied)
-- Interested in sending a prespecified list of files/folders. (can be single or multiple) - currently a single zip file for simplicity
+- Interested in sending a single file (Zipped)
 - Run all three components on the loop back interface (127.0.0.1) as seperate processes
 - Print status on command line
 
