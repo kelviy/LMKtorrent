@@ -1,6 +1,5 @@
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
-from tracker import Request
-from tracker import Address, MetaData
+from tracker import Request, Address, MetaData
 
 def main():
     ip, port = add_to_tracker()
