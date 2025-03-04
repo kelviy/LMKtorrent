@@ -118,7 +118,7 @@ class SeederInfo():
 
     def remove_inactive(self):
         for index, seeder in enumerate(self.seeder_list):
-            duration = datetime.now() - seeder[index]
+            duration = datetime.now() - seeder[1]
             if duration > SeederInfo.expire_duration:
                 print(f"Removing {seeder}")
                 self.seeder_list.pop(index)
