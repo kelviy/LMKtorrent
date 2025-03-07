@@ -30,7 +30,9 @@ class Tracker():
     def exec_request(self,request, client_addr):
         match request[0][0]:
             case Request.NOTIFY_TRACKER:
-                print()
+                for seeder in self.seeder_list:
+                    if seeder[0] == SeederPeer(client_addr):
+                        seeder[1] = datetime.now()
             case Request.REQUEST_FILE:
                 print()
             case Request.ADD_SEEDER:
@@ -46,6 +48,9 @@ class Tracker():
                     else:
                         self.file_list[file[0]] = [file[1],[client_addr]]
                         print(file[0] + " " + file[1])
+                
+                self.udp_server_socket.sentto(Request.CON_EST.encode(),client_addr)
+                
     
     def remove_inactive(self):
         seeder_index_list = []

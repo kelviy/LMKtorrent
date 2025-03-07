@@ -1,73 +1,69 @@
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from tracker import Request, Address, MetaData
+from file import File
+from address import Address
+from request import Request
 
 def main():
-    ip, port = add_to_tracker()
-    server_socket = socket(AF_INET, SOCK_STREAM)
-    server_socket.bind((ip, port))
-    server_socket.listen(1)
+    ip_address = input("Enter IP address: ")
+    port_num = int(input("Enter port number: "))
 
-    while True:
-        connectionSocket, addr = server_socket.accept()
-        print("Connect Received from", addr)
+    seeder_address = (ip_address, port_num)
+    tracker_address = ("127.0.0.1", 12500)
 
-        send_file(connectionSocket)
-        print("File is sent")
+    seeder = Seeder(seeder_address, tracker_address)
 
-        notify_tracker()
+    connected = seeder.add_seeder()
 
-
-    # serverSocket = socket(AF_INET, SOCK_STREAM)
-    # serverSocket.bind((IP, PORT))
-    # serverSocket.listen(1)
-    #
-    # print("The server is ready to receive")
-    #
-    # while True:
-    #     connectionSocket, addr = serverSocket.accept()
-    #     print("Connect Received from", addr)
-    #
-    #     sentence = connectionSocket.recv(1024).decode()
-    #     capitalizedSentence = sentence.upper()
-    #     print(f"Received: {sentence}")
-    #
-    #     connectionSocket.send(capitalizedSentence.encode())
-    #     connectionSocket.close()
-
-def send_file(leecher_socket: socket):
-    with open(f'data/{MetaData.file_name}', mode='rb') as file:
-        file_part = file.read(MetaData.send_chunk_size)
-        count =0
-        while file_part:
-            # leecher_socket.send(bool.to_bytes(True))
-            sent = leecher_socket.send(file_part)
-            print(f"{count}: {sent}")
-            count += 1
-            file_part = file.read(MetaData.send_chunk_size)
-
-        # print("Sent false")
-        # leecher_socket.send(bool.to_bytes(False))
+    if connected:
+        seeder.start_main_loop()
 
 
-def notify_tracker(tracker=Address("127.0.0.1", 12500)):
-    client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind(("127.0.0.1",12501))
 
-    client_socket.sendto(Request.NOTIFY_TRACKER.encode(), tracker.get_con())
-    client_socket.close()
+class Seeder():
+    def __init__(self,seeder_addr,tracker_addr):
+        self.seeder_addr = seeder_addr
+        self.tracker_addr = tracker_addr
+        self.tracker_client_socket = socket(AF_INET, SOCK_DGRAM)
+        self.tracker_client_socket.bind(self.seeder_addr)
+        self.seeder_server_socket = socket(AF_INET,SOCK_STREAM)
+        self.seeder_server_socket.bind(self.seeder_addr)
 
-def add_to_tracker(tracker=Address("127.0.0.1", 12500)):
-    client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind(("127.0.0.1",12501))
+        with open('data/file_list.txt', mode='r') as file:
+            self.file_list = file.read()
+        
+    def start_main_loop(self):
+        self.seeder_server_socket.listen(10)
+        num_requests = 0
 
-    print("Sending Request to add this seeder")
-    client_socket.sendto(Request.ADD_SEEDER.encode(), tracker.get_con())
-    response, server_addr = client_socket.recvfrom(1024)
-    print(response.decode())
+        while True:
+            connection_socket, leacher_addr = self.seeder_server_socket.accept()
+            num_requests += 1
 
-    ip, port = client_socket.getsockname()
-    client_socket.close()
-    return ip, port
+            self.send_file(connection_socket)
+
+            if (num_requests >= 10):
+                self.notify_tracker()
+            
+
+    def add_seeder(self):
+        request = (Request.ADD_SEEDER + '\n' + self.file_list).encode()
+        self.tracker_client_socket.sendto(request, self.tracker_addr)
+
+        answer, tracker_address  = self.tracker_client_socket.recvfrom(1024)
+        
+        if answer.decode() == Request.CON_EST:
+            return True
+        else:
+            return False
+        
+    def notify_tracker(self):
+        request = Request.NOTIFY_TRACKER.encode()
+        self.tracker_client_socket.sendto(request,self.tracker_addr)
+        
+    #def send_file(file_name):
+
+        
 
 if __name__ == "__main__":
     main()
