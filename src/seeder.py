@@ -3,6 +3,7 @@ from tracker import Request, Address, MetaData
 from file import File
 from address import Address
 from request import Request
+from datetime import timedelta, datetime
 
 def main():
     ip_address = input("Enter IP address: ")
@@ -21,6 +22,9 @@ def main():
 
 
 class Seeder():
+
+    request_interval = timedelta(minutes=5)
+
     def __init__(self,seeder_addr,tracker_addr):
         self.seeder_addr = seeder_addr
         self.tracker_addr = tracker_addr
@@ -28,6 +32,7 @@ class Seeder():
         self.tracker_client_socket.bind(self.seeder_addr)
         self.seeder_server_socket = socket(AF_INET,SOCK_STREAM)
         self.seeder_server_socket.bind(self.seeder_addr)
+        self.last_check_in = datetime.now()
 
         with open('data/file_list.txt', mode='r') as file:
             self.file_list = file.read()
@@ -42,7 +47,7 @@ class Seeder():
 
             self.send_file(connection_socket)
 
-            if (num_requests >= 10):
+            if (datetime.now()-self.last_check_in) >= self.request_interval:
                 self.notify_tracker()
             
 
@@ -60,7 +65,7 @@ class Seeder():
     def notify_tracker(self):
         request = Request.NOTIFY_TRACKER.encode()
         self.tracker_client_socket.sendto(request,self.tracker_addr)
-        
+        self.last_check_in = datetime.now()
     #def send_file(file_name):
 
         

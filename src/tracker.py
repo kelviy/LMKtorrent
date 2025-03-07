@@ -33,6 +33,7 @@ class Tracker():
                 for seeder in self.seeder_list:
                     if seeder[0] == SeederPeer(client_addr):
                         seeder[1] = datetime.now()
+                        print("Ping: " + client_addr)
             case Request.REQUEST_FILE:
                 print()
             case Request.ADD_SEEDER:
