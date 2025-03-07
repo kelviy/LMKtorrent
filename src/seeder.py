@@ -1,5 +1,5 @@
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
-from tracker import Request, Address, MetaData
+from packet import Request, Address, MetaData
 import os
 import json
 import struct
@@ -12,7 +12,7 @@ def main():
     tracker_address = Address('127.0.0.1', 12500)
 
     local_seeder = Seeder(seeder_address, tracker_address, folder_path)
-
+    local_seeder.add_to_tracker()
     # ip, port = add_to_tracker(folder_path)
     # server_socket = socket(AF_INET, SOCK_STREAM)
     # server_socket.bind((ip, port))
@@ -29,11 +29,12 @@ def main():
 
 
 class Seeder():
-    def __init__(self, address: Address, tracker_address : Address, folder_path: str):
+    def __init__(self, address: Address, tracker_address , folder_path):
         self.address = address
         self.folder_path = folder_path
-        self.file_list = os.listdir(folder_path)
-        self.tracker_address = Address("127.0.0.1", 12500)
+        if folder_path != None:
+            self.file_list = os.listdir(folder_path)
+            self.tracker_address = Address("127.0.0.1", 12500)
 
     def send_file(self, leecher_socket: socket):
         with open(f'data/{MetaData.file_name}', mode='rb') as file:
@@ -75,7 +76,7 @@ class Seeder():
         print(f"Sending Request to add this seeder to make with folder {self.folder_path} available")
         client_socket.sendto(header, self.tracker_address.get_con())
 
-        response,_ = client_socket.recvfrom(20)
+        response,_ = client_socket.recvfrom(1)
         status_message = struct.unpack(Request.STATUS_FORMAT, response)
 
         if status_message:
@@ -90,6 +91,12 @@ class Seeder():
         ip, port = client_socket.getsockname()
         client_socket.close()
         return ip, port
+
+    def equal_address(self, address: Address):
+        return address == self.address
+
+    def get_meta_info(self):
+        return self.address.get_con, self.file_list
 
 if __name__ == "__main__":
     main()

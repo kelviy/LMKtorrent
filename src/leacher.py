@@ -1,5 +1,5 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
-from tracker import Address, MetaData, Request
+from packet import Address, MetaData, Request
 import os
 
 def main():

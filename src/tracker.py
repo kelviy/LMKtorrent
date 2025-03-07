@@ -1,7 +1,9 @@
 import json
+from packet import Address, Request, MetaData
 from datetime import datetime, timedelta
 from socket import socket, AF_INET, SOCK_DGRAM
 import struct
+from seeder import Seeder
 
 def main():
     local_tracker = Tracker()
@@ -20,19 +22,18 @@ class Tracker():
 
     def start_main_loop(self):
         while True:
-            header, client_addr = self.udp_server_socket.recvfrom(1024)
+            header, client_addr = self.udp_server_socket.recvfrom(20)
+            client_addr = Address(client_addr[0], client_addr[1])
             request, message_size = struct.unpack(Request.HEADER_FORMAT, header)
+            request = request.decode().replace("\x00", "")
             print("Connect Received from", client_addr)
-            print("Msg:", request)
+            print("Msg:", request, "; next message size", message_size)
             
             # new thread
             self.seeder_info.remove_inactive()
            
-            # new thread
-            self.exec_request(request, message_size, client_addr)
+            print(self.exec_request(request, message_size, client_addr))
             
-            # code for sending success
-            # self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_addr)
           
     def exec_request(self, request, message_size, client_addr) -> bool:
         match request:
@@ -40,7 +41,7 @@ class Tracker():
                 return self.add_seeder(client_addr, message_size)
             case Request.NOTIFY_TRACKER:
                 self.seeder_info.seeder_update_check(Address(client_addr[0], client_addr[1]))
-                print("Updated", client_addr)
+                print("Updated ", client_addr)
                 return True
             case Request.REQUEST_METADATA:
                 meta = MetaData(self.seeder_info.get_seeder_list())
@@ -52,64 +53,19 @@ class Tracker():
         return False
 
     def add_seeder(self, client_address, message_size):
-        self.seeder_info.add_seeder(client_address[0], client_address[1])
-        print("Added", client_address)
-        self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_address)
+        self.seeder_info.add_seeder(client_address)
+        print("Added ", client_address)
+        self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_address.get_con())
 
-        self.udp_server_socket.recvfrom(message_size)
-        return True
-
-
-class Request():
-    ADD_SEEDER = 'add_seeder'
-    NOTIFY_TRACKER = 'notify_tracker'
-    REQUEST_METADATA = 'request_meta'
-
-
-    HEADER_FORMAT = '16si'
-    STATUS_FORMAT = '?'
-
-class Address():
-    """
-    Stores ip address and port number for seeder, leecher, tracker... 
-    """
-    def get_con(self) -> tuple:
-        return self.ip, self.port
-
-    def __init__(self, ip: str, port: int):
-        self.ip = ip
-        self.port = port
-    
-    def __eq__(self, other):
-        if other.ip == self.ip and other.port == self.port:
+        data, client_addr = self.udp_server_socket.recvfrom(message_size)
+        file_list = json.loads(data.decode())
+        
+        if Address(client_addr[0], client_addr[1]) == client_address:
+            self.seeder_info.update_file_list(client_address, file_list)
+            print("Uploaded File List:", file_list)
             return True
+        
         return False
-
-    def __repr__(self):
-        return f"Address({self.ip}, {self.port})"
-   
-
-class MetaData():
-    """ 
-    MetaData that is sent to the leecher
-    """
-    # 12.7 MB (below number is in bytes)
-    file_size = 12_665_642
-    file_name = "video.zip"
-    # 1 MB
-    send_chunk_size = 5_000
-
-    def __init__(self, seeder_list: list):
-        # a list of seeders. Check element of the list is a tuple containing ip address and port number [ip, port]
-        self.seeder_list = seeder_list 
-
-    def encode(self) -> bytes:
-        return json.dumps(self.seeder_list).encode()
-
-    @staticmethod
-    def decode(data: bytes) -> tuple:
-        data = json.loads(data.decode())
-        return tuple(data)
 
 class SeederInfo():
     """
@@ -117,16 +73,24 @@ class SeederInfo():
     """
     expire_duration = timedelta(minutes=10)
 
-    def __init__(self, seeder_list=[]):
-        self.seeder_list = seeder_list 
+    def __init__(self):
+        self.seeder_list = []
 
-    def add_seeder(self, ip, port):
+    def add_seeder(self, address: Address):
         last_check = datetime.now()
-        self.seeder_list.append([Address(ip, port), last_check])
+        temp_seeder = Seeder(address, None, None)
+        self.seeder_list.append([temp_seeder, last_check])
+
+    def update_file_list(self, address: Address, file_list):
+        for seeder in self.seeder_list:
+            if seeder[0].equal_address(address):
+                seeder[0].file_list = file_list
+                return True
+        return False
 
     def seeder_update_check(self, seeder_address: Address):
         for seeder in self.seeder_list:
-            if seeder[0] == seeder_address:
+            if seeder[0].equal_address(seeder_address):
                 seeder[1] = datetime.now()
                 return True
         print("Unknown Seeder. Unable to Update")
@@ -142,7 +106,7 @@ class SeederInfo():
     def get_seeder_list(self):
         seeder_list = []
         for seeder in self.seeder_list:
-            seeder_list.append(seeder[0].get_con())
+            seeder_list.append(seeder[0].get_meta_info())
         return seeder_list
 
 if __name__ == "__main__":
