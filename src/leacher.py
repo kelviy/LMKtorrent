@@ -8,48 +8,52 @@ def main():
     - IP Address: 127.0.0.1 (loop back interface) & Port: 12500
     - File: 1 zip file
     """
+    local_leacher = Leacher()
+    local_leacher.get_metadata()
+    
+    #print files and ask user for which file/files
 
-    seeder_list = get_metadata()
+    # for ip, port in local_leacher.seeder_list:
+    #     if local_leacher.download_file(Address(ip, port)):
+    #         break
 
-    for ip, port in seeder_list:
-        if download_file(Address(ip, port)):
-            break
+class Leacher:
+    def __init__(self):
+        self.tracker_address = Address("127.0.0.1", 12500)
 
+    def get_metadata(self):
+        """
+        Downloads metadata from specified tracker information
+        """
+        client_socket = socket(AF_INET, SOCK_DGRAM)
+        client_socket.sendto(Request.REQUEST_METADATA.encode(), self.tracker_address.get_con())
 
-def get_metadata(tracker=Address("127.0.0.1", 12500)):
-    """
-    Downloads metadata from specified tracker information
-    """
-    client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.sendto(Request.REQUEST_METADATA.encode(), tracker.get_con())
+        seeder_list, server_addr = client_socket.recvfrom(1024)
+        self.seeder_list = MetaData.decode(seeder_list)
 
-    seeder_list, server_addr = client_socket.recvfrom(1024)
-    seeder_list = MetaData.decode(seeder_list)
-    return seeder_list
+    def download_file(self, seeder=Address("127.0.0.1", 12500)):
+        soc = socket(AF_INET, SOCK_STREAM)
+        soc.connect(seeder.get_con())
 
-def download_file(seeder=Address("127.0.0.1", 12500)):
-    soc = socket(AF_INET, SOCK_STREAM)
-    soc.connect(seeder.get_con())
+        os.makedirs('./tmp', exist_ok=True)
 
-    os.makedirs('./tmp', exist_ok=True)
-
-    with open(f'tmp/{MetaData.file_name}', mode='wb') as file:
-        
-        # flag = bool.from_bytes(soc.recv(1))
-        remainingBytes = MetaData.file_size
-        count = 0
-        # while flag:
-        while remainingBytes > 0:
-            file_part = soc.recv(MetaData.send_chunk_size)
-            print(f"{count}: {len(file_part)}")
-            count+= 1
-            file.write(file_part)
-            remainingBytes -= MetaData.send_chunk_size
+        with open(f'tmp/{MetaData.file_name}', mode='wb') as file:
+            
             # flag = bool.from_bytes(soc.recv(1))
-            # print(flag)
-    print("Successfully downloaded file")
-    soc.close()
-    return True
+            remainingBytes = MetaData.file_size
+            count = 0
+            # while flag:
+            while remainingBytes > 0:
+                file_part = soc.recv(MetaData.send_chunk_size)
+                print(f"{count}: {len(file_part)}")
+                count+= 1
+                file.write(file_part)
+                remainingBytes -= MetaData.send_chunk_size
+                # flag = bool.from_bytes(soc.recv(1))
+                # print(flag)
+        print("Successfully downloaded file")
+        soc.close()
+        return True
 
 if __name__ == "__main__":
     main()

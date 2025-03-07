@@ -1,57 +1,73 @@
 import json
 from datetime import datetime, timedelta
 from socket import socket, AF_INET, SOCK_DGRAM
+import struct
 
 def main():
-    def exec_request(request) -> bool:
+    local_tracker = Tracker()
+    local_tracker.start_main_loop()
+
+
+class Tracker():
+    def __init__(self):
+        self.seeder_info = SeederInfo()
+
+        self.address = Address("127.0.0.1", 12500)
+        self.udp_server_socket = socket(AF_INET, SOCK_DGRAM)
+        self.udp_server_socket.bind(self.address.get_con())
+
+        print("Tracker is up")
+
+    def start_main_loop(self):
+        while True:
+            header, client_addr = self.udp_server_socket.recvfrom(1024)
+            request, message_size = struct.unpack(Request.HEADER_FORMAT, header)
+            print("Connect Received from", client_addr)
+            print("Msg:", request)
+            
+            # new thread
+            self.seeder_info.remove_inactive()
+           
+            # new thread
+            self.exec_request(request, message_size, client_addr)
+            
+            # code for sending success
+            # self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_addr)
+          
+    def exec_request(self, request, message_size, client_addr) -> bool:
         match request:
             case Request.ADD_SEEDER:
-                seeder_info.add_seeder(client_addr[0], client_addr[1])
-                print("Added", client_addr)
-                return True
+                return self.add_seeder(client_addr, message_size)
             case Request.NOTIFY_TRACKER:
-                seeder_info.seeder_update_check(Address(client_addr[0], client_addr[1]))
+                self.seeder_info.seeder_update_check(Address(client_addr[0], client_addr[1]))
                 print("Updated", client_addr)
                 return True
             case Request.REQUEST_METADATA:
-                meta = MetaData(seeder_info.get_seeder_list())
-                server_socket.sendto(meta.encode(), client_addr)
+                meta = MetaData(self.seeder_info.get_seeder_list())
+                self.udp_server_socket.sendto(meta.encode(), client_addr)
                 print("Sent Meta Data to:", client_addr)
                 return True
 
 
         return False
 
-    server = Address("127.0.0.1", 12500)
+    def add_seeder(self, client_address, message_size):
+        self.seeder_info.add_seeder(client_address[0], client_address[1])
+        print("Added", client_address)
+        self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_address)
 
-    seeder_info = SeederInfo()
+        self.udp_server_socket.recvfrom(message_size)
+        return True
 
-    server_socket = socket(AF_INET, SOCK_DGRAM)
-    server_socket.bind(server.get_con())
 
-    print("Tracker is up")
-
-    while True:
-        request, client_addr = server_socket.recvfrom(1024)
-        request = request.decode()
-        print("Connect Received from", client_addr)
-        print("Msg:", request)
-        
-        seeder_info.remove_inactive()
-        
-        if exec_request(request):
-            server_socket.sendto(Request.SUCCESS.encode(), client_addr)
-        else:
-            server_socket.sendto(Request.FAIL.encode(), client_addr)
-
-            
 class Request():
     ADD_SEEDER = 'add_seeder'
     NOTIFY_TRACKER = 'notify_tracker'
     REQUEST_METADATA = 'request_meta'
 
-    SUCCESS = 'success'
-    FAIL = 'fail'
+
+    HEADER_FORMAT = '16si'
+    STATUS_FORMAT = '?'
 
 class Address():
     """
@@ -97,7 +113,7 @@ class MetaData():
 
 class SeederInfo():
     """
-    Responsible for keeping active seeders
+    Responsible for keeping active seeders and their info
     """
     expire_duration = timedelta(minutes=10)
 

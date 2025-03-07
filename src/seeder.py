@@ -1,73 +1,95 @@
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from tracker import Request, Address, MetaData
+import os
+import json
+import struct
 
 def main():
-    ip, port = add_to_tracker()
-    server_socket = socket(AF_INET, SOCK_STREAM)
-    server_socket.bind((ip, port))
-    server_socket.listen(1)
+    # specify folder to make available to leechers
+    # folder_path = input("Enter folder path (absolute path or relative to running scripts):")
+    folder_path = "./data/" #default folder path for nowa
+    seeder_address = Address('127.0.0.1', 12501)
+    tracker_address = Address('127.0.0.1', 12500)
 
-    while True:
-        connectionSocket, addr = server_socket.accept()
-        print("Connect Received from", addr)
+    local_seeder = Seeder(seeder_address, tracker_address, folder_path)
 
-        send_file(connectionSocket)
-        print("File is sent")
-
-        notify_tracker()
-
-
-    # serverSocket = socket(AF_INET, SOCK_STREAM)
-    # serverSocket.bind((IP, PORT))
-    # serverSocket.listen(1)
-    #
-    # print("The server is ready to receive")
+    # ip, port = add_to_tracker(folder_path)
+    # server_socket = socket(AF_INET, SOCK_STREAM)
+    # server_socket.bind((ip, port))
+    # server_socket.listen(1)
     #
     # while True:
-    #     connectionSocket, addr = serverSocket.accept()
+    #     connectionSocket, addr = server_socket.accept()
     #     print("Connect Received from", addr)
     #
-    #     sentence = connectionSocket.recv(1024).decode()
-    #     capitalizedSentence = sentence.upper()
-    #     print(f"Received: {sentence}")
+    #     send_file(connectionSocket)
+    #     print("File is sent")
     #
-    #     connectionSocket.send(capitalizedSentence.encode())
-    #     connectionSocket.close()
+    #     notify_tracker()
 
-def send_file(leecher_socket: socket):
-    with open(f'data/{MetaData.file_name}', mode='rb') as file:
-        file_part = file.read(MetaData.send_chunk_size)
-        count =0
-        while file_part:
-            # leecher_socket.send(bool.to_bytes(True))
-            sent = leecher_socket.send(file_part)
-            print(f"{count}: {sent}")
-            count += 1
+
+class Seeder():
+    def __init__(self, address: Address, tracker_address : Address, folder_path: str):
+        self.address = address
+        self.folder_path = folder_path
+        self.file_list = os.listdir(folder_path)
+        self.tracker_address = Address("127.0.0.1", 12500)
+
+    def send_file(self, leecher_socket: socket):
+        with open(f'data/{MetaData.file_name}', mode='rb') as file:
             file_part = file.read(MetaData.send_chunk_size)
+            count =0
+            while file_part:
+                # leecher_socket.send(bool.to_bytes(True))
+                sent = leecher_socket.send(file_part)
+                print(f"{count}: {sent}")
+                count += 1
+                file_part = file.read(MetaData.send_chunk_size)
 
         # print("Sent false")
         # leecher_socket.send(bool.to_bytes(False))
 
+    def notify_tracker(self):
+        client_socket = socket(AF_INET, SOCK_DGRAM)
+        client_socket.bind(("127.0.0.1",12501))
 
-def notify_tracker(tracker=Address("127.0.0.1", 12500)):
-    client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind(("127.0.0.1",12501))
+        client_socket.sendto(Request.NOTIFY_TRACKER.encode(), self.tracker_address.get_con())
+        client_socket.close()
 
-    client_socket.sendto(Request.NOTIFY_TRACKER.encode(), tracker.get_con())
-    client_socket.close()
+    def add_to_tracker(self):
+        """
+        1. Will send a "Add_Seeder" request to add itself to the tracker
+        2. Following message size will be sent with header
+        3. Ackowledgement received
+        4. message(data - file list) will be sent after an acknolwedgement from server
+        """
 
-def add_to_tracker(tracker=Address("127.0.0.1", 12500)):
-    client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.bind(("127.0.0.1",12501))
+        message = json.dumps(self.file_list).encode()
+        message_size = len(message)
 
-    print("Sending Request to add this seeder")
-    client_socket.sendto(Request.ADD_SEEDER.encode(), tracker.get_con())
-    response, server_addr = client_socket.recvfrom(1024)
-    print(response.decode())
+        header = struct.pack(Request.HEADER_FORMAT, Request.ADD_SEEDER.encode(), message_size)
 
-    ip, port = client_socket.getsockname()
-    client_socket.close()
-    return ip, port
+        client_socket = socket(AF_INET, SOCK_DGRAM)
+        client_socket.bind(("127.0.0.1", 12501))
+
+        print(f"Sending Request to add this seeder to make with folder {self.folder_path} available")
+        client_socket.sendto(header, self.tracker_address.get_con())
+
+        response,_ = client_socket.recvfrom(20)
+        status_message = struct.unpack(Request.STATUS_FORMAT, response)
+
+        if status_message:
+            print("Successfully added seeder to client")
+            print("Uploading file list")
+
+            client_socket.sendto(message, self.tracker_address.get_con())
+        else:
+            print("Unsuccessful with adding seeder")
+
+
+        ip, port = client_socket.getsockname()
+        client_socket.close()
+        return ip, port
 
 if __name__ == "__main__":
     main()
