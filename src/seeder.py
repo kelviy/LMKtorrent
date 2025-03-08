@@ -12,20 +12,19 @@ def main():
     tracker_address = Address('127.0.0.1', 12500)
 
     local_seeder = Seeder(seeder_address, tracker_address, folder_path)
-    local_seeder.add_to_tracker()
-    # ip, port = add_to_tracker(folder_path)
-    # server_socket = socket(AF_INET, SOCK_STREAM)
-    # server_socket.bind((ip, port))
-    # server_socket.listen(1)
-    #
-    # while True:
-    #     connectionSocket, addr = server_socket.accept()
-    #     print("Connect Received from", addr)
-    #
-    #     send_file(connectionSocket)
-    #     print("File is sent")
-    #
-    #     notify_tracker()
+    ip, port = local_seeder.add_to_tracker()
+    server_socket = socket(AF_INET, SOCK_STREAM)
+    server_socket.bind((ip, port))
+    server_socket.listen(1)
+
+    while True:
+        connectionSocket, addr = server_socket.accept()
+        print("Connect Received from", addr)
+
+        local_seeder.send_file(connectionSocket)
+        print("File is sent")
+
+        local_seeder.notify_tracker()
 
 
 class Seeder():
@@ -53,8 +52,8 @@ class Seeder():
     def notify_tracker(self):
         client_socket = socket(AF_INET, SOCK_DGRAM)
         client_socket.bind(("127.0.0.1",12501))
-
-        client_socket.sendto(Request.NOTIFY_TRACKER.encode(), self.tracker_address.get_con())
+        header = struct.pack(Request.HEADER_FORMAT, Request.NOTIFY_TRACKER.encode(), -1)
+        client_socket.sendto(header, self.tracker_address.get_con())
         client_socket.close()
 
     def add_to_tracker(self):

@@ -16,10 +16,16 @@ def main():
     for index, file_name in enumerate(local_leacher.seeder_list[0][1]):
         print(f"{index}: {file_name}")
 
-    usr_ans = input("\nEnter desired file number seperated by spaces:\n")
+    
+    usr_ans = input("\nEnter desired file number seperated by spaces - choose video.zip only for now:\n")
+
     print(usr_ans)
 
     
+    download_files_req = usr_ans.split(" ")
+
+    for file_no in download_files_req:
+        local_leacher.download_file(local_leacher.seeder_list[0][1][int(file_no)],local_leacher.seeder_list[0][0]) 
 
     #print files and ask user for which file/files
 
@@ -41,8 +47,11 @@ class Leacher:
 
         seeder_list, server_addr = client_socket.recvfrom(1024)
         self.seeder_list = MetaData.decode(seeder_list)
+        
+        for i in range(len(self.seeder_list)):
+            self.seeder_list[i][0] = Address(self.seeder_list[i][0][0], self.seeder_list[i][0][1])
 
-    def download_file(self, seeder=Address("127.0.0.1", 12500)):
+    def download_file(self, file_name, seeder=Address("127.0.0.1", 12500)):
         soc = socket(AF_INET, SOCK_STREAM)
         soc.connect(seeder.get_con())
 

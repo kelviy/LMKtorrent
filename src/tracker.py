@@ -40,7 +40,7 @@ class Tracker():
             case Request.ADD_SEEDER:
                 return self.add_seeder(client_addr, message_size)
             case Request.NOTIFY_TRACKER:
-                self.seeder_info.seeder_update_check(Address(client_addr[0], client_addr[1]))
+                self.seeder_info.seeder_update_check(client_addr)
                 print("Updated ", client_addr)
                 return True
             case Request.REQUEST_METADATA:
