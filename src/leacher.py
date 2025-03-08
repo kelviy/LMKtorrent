@@ -11,7 +11,16 @@ def main():
     """
     local_leacher = Leacher()
     local_leacher.get_metadata()
+
+    print(f"Files Available : ")
+    for index, file_name in enumerate(local_leacher.seeder_list[0][1]):
+        print(f"{index}: {file_name}")
+
+    usr_ans = input("\nEnter desired file number seperated by spaces:\n")
+    print(usr_ans)
+
     
+
     #print files and ask user for which file/files
 
     # for ip, port in local_leacher.seeder_list:
@@ -32,7 +41,6 @@ class Leacher:
 
         seeder_list, server_addr = client_socket.recvfrom(1024)
         self.seeder_list = MetaData.decode(seeder_list)
-        print(self.seeder_list)
 
     def download_file(self, seeder=Address("127.0.0.1", 12500)):
         soc = socket(AF_INET, SOCK_STREAM)
