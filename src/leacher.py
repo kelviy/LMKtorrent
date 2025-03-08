@@ -3,7 +3,7 @@
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
-from packet import Request, MetaData
+from packet import Request, File
 import ast
 from multiprocessing import Process
 
@@ -16,6 +16,8 @@ def main():
 
     leacher = Leacher(leacher_addr, tracker_addr)
     leacher.request_file(file_name)
+
+    #Write the file name and its size to a textfile file_list.txt in ./data/
 
 class Leacher:
     def __init__(self, tracker_addr, leacher_addr):
@@ -57,14 +59,37 @@ class Leacher:
 
                 for seeder in response:
                     process = Process(target=self.get_file_part, args=(file_name,seeder[0],seeder[1],seeder[2],file_parts))
+                    downloaders.append(process)
 
+                    process.start()
 
+                for process in downloaders:
+                    process.join()
+            else:
+                self.get_file_part(file_name, seeder[0], seeder[1],seeder[2],file_parts)
+
+            with open(f'tmp/{file_name}', mode='wb') as file:
+                for part in file_parts:
+                    file.write(part)
+
+            print(file_name + " downloaded succesfully!")
+        else:
+            print("File not found!")
+
+            
 
     def get_file_part(file_name, num_chunks, send_after, seeder_addr, file_parts):
         request = Request.get_file_part + " " + file_name + "\n" + str(num_chunks) + " " + str(send_after)
         request = request.encode()
 
+        num_chunks_to_skip = send_after/File.chunk_size
+
         client_socket = socket(AF_INET, SOCK_STREAM)
         client_socket.connect(seeder_addr)
 
         client_socket.send(request)
+
+        for i in range(num_chunks):
+            file_parts[num_chunks_to_skip + i] = client_socket.recvfrom(File.chunk_size)
+
+        client_socket.close()
