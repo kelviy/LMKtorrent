@@ -1,6 +1,5 @@
 from socket import socket, AF_INET, SOCK_DGRAM
-from request import Request
-from seederentity import SeederPeer
+from packet import SeederPeer, Request
 from datetime import datetime
 
 def main():

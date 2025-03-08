@@ -1,8 +1,5 @@
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
-from tracker import Request, Address, MetaData
-from file import File
-from address import Address
-from request import Request
+from packet import Request
 from datetime import timedelta, datetime
 
 def main():
