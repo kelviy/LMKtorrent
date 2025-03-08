@@ -1,6 +1,11 @@
+#Mark Du Preez
+#CSC3002F Group Assignment 2025
+#Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
+
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from packet import Request
 from datetime import timedelta, datetime
+import os
 
 def main():
     ip_address = input("Enter IP address: ")
@@ -31,7 +36,11 @@ class Seeder():
         self.seeder_server_socket.bind(self.seeder_addr)
         self.last_check_in = datetime.now()
 
-        with open('data/file_list.txt', mode='r') as file:
+        current_dir = os.getcwd()
+        parent_dir = os.path.dirname(current_dir)
+        file_path = os.path.join(parent_dir, 'data', 'file_list.txt')
+
+        with open(file_path, mode='r') as file:
             self.file_list = file.read()
         
     def start_main_loop(self):

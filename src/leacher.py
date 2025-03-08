@@ -1,57 +1,70 @@
+#Mark Du Preez
+#CSC3002F Group Assignment 2025
+#Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
+
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
-from tracker import Address, MetaData, Request
-import os
+from packet import Request, MetaData
+import ast
+from multiprocessing import Process
 
 def main():
-    """
-    - Assume contacted tracker and obtained necessary data
-    - IP Address: 127.0.0.1 (loop back interface) & Port: 12500
-    - File: 1 zip file
-    """
+    leacher_ip_address = input("Enter IP address: ")
+    leacher_port_num = int(input("Enter port number: "))
+    file_name = input("Enter the name of the file that you want to download: ")
+    leacher_addr = (leacher_ip_address,leacher_port_num)
+    tracker_addr = ("127.0.0.1",12500)
 
-    seeder_list = get_metadata()
+    leacher = Leacher(leacher_addr, tracker_addr)
+    leacher.request_file(file_name)
 
-    for ip, port in seeder_list:
-        if download_file(Address(ip, port)):
-            break
+class Leacher:
+    def __init__(self, tracker_addr, leacher_addr):
+        self.tracker_addr = tracker_addr
+        self.leacher_addr = leacher_addr
 
-
-def get_metadata(tracker=Address("127.0.0.1", 12500)):
-    """
-    Downloads metadata from specified tracker information
-    """
-    client_socket = socket(AF_INET, SOCK_DGRAM)
-    client_socket.sendto(Request.REQUEST_METADATA.encode(), tracker.get_con())
-
-    seeder_list, server_addr = client_socket.recvfrom(1024)
-    seeder_list = MetaData.decode(seeder_list)
-    return seeder_list
-
-def download_file(seeder=Address("127.0.0.1", 12500)):
-    soc = socket(AF_INET, SOCK_STREAM)
-    soc.connect(seeder.get_con())
-
-    os.makedirs('./tmp', exist_ok=True)
-
-    with open(f'tmp/{MetaData.file_name}', mode='wb') as file:
+    def request_file(self, file_name):
+        udp_client_socket = socket(AF_INET, SOCK_DGRAM)
+        udp_client_socket.bind(self.leacher_addr)
+        request = (Request.REQUEST_FILE + " " + file_name).encode()
         
-        # flag = bool.from_bytes(soc.recv(1))
-        remainingBytes = MetaData.file_size
-        count = 0
-        # while flag:
-        while remainingBytes > 0:
-            file_part = soc.recv(MetaData.send_chunk_size)
-            print(f"{count}: {len(file_part)}")
-            count+= 1
-            file.write(file_part)
-            remainingBytes -= MetaData.send_chunk_size
-            # flag = bool.from_bytes(soc.recv(1))
-            # print(flag)
-    print("Successfully downloaded file")
-    soc.close()
-    return True
+        udp_client_socket.sendto(request, self.tracker_addr)
 
-if __name__ == "__main__":
-    main()
+        response, tracker_address = udp_client_socket.recvfrom(5120)
+        udp_client_socket.close()
+
+        response = response.decode()
+
+        response = response.splitlines()
+
+        request_response = response.pop(0)
+
+        if (request_response == Request.FILE_FOUND):
+            chunking_info = response.pop(0).split(" ")
+            chunking_info = [int(x) for x in chunking_info]
+
+            file_parts = [None]*chunking_info[0]
+
+            for seeder in response:
+                rule = seeder.split(" ")
+                rule[0] = int(rule[0])
+                rule[1] = int(rule[1])
+
+                rule[2] = ast.literal_eval(rule[2])
 
 
+            if len(response) > 1:
+                downloaders = []
+
+                for seeder in response:
+                    process = Process(target=self.get_file_part, args=(file_name,seeder[0],seeder[1],seeder[2],file_parts))
+
+
+
+    def get_file_part(file_name, num_chunks, send_after, seeder_addr, file_parts):
+        request = Request.get_file_part + " " + file_name + "\n" + str(num_chunks) + " " + str(send_after)
+        request = request.encode()
+
+        client_socket = socket(AF_INET, SOCK_STREAM)
+        client_socket.connect(seeder_addr)
+
+        client_socket.send(request)
