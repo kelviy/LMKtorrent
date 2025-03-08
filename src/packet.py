@@ -1,3 +1,5 @@
+import json
+
 class Request():
     ADD_SEEDER = 'add_seeder'
     NOTIFY_TRACKER = 'notify_tracker'
@@ -42,6 +44,7 @@ class MetaData():
         self.seeder_list = seeder_list 
 
     def encode(self) -> bytes:
+        print(self.seeder_list)
         return json.dumps(self.seeder_list).encode()
 
     @staticmethod

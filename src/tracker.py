@@ -45,7 +45,7 @@ class Tracker():
                 return True
             case Request.REQUEST_METADATA:
                 meta = MetaData(self.seeder_info.get_seeder_list())
-                self.udp_server_socket.sendto(meta.encode(), client_addr)
+                self.udp_server_socket.sendto(meta.encode(), client_addr.get_con())
                 print("Sent Meta Data to:", client_addr)
                 return True
 
@@ -56,8 +56,16 @@ class Tracker():
         self.seeder_info.add_seeder(client_address)
         print("Added ", client_address)
         self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_address.get_con())
+        
+        #udp_data_socket
+        udp_data_socket = socket(AF_INET, SOCK_DGRAM)
+        data_address = Address("127.0.0.1", 11000)
+        udp_data_socket.bind(data_address.get_con())
 
-        data, client_addr = self.udp_server_socket.recvfrom(message_size)
+        data, client_addr = udp_data_socket.recvfrom(message_size)
+        
+        udp_data_socket.close()
+
         file_list = json.loads(data.decode())
         
         if Address(client_addr[0], client_addr[1]) == client_address:
@@ -97,7 +105,7 @@ class SeederInfo():
         return False
 
     def remove_inactive(self):
-        for index, seeder in enumerate(self.seeder_list):
+        for index, seeder in reversed(tuple(enumerate(self.seeder_list))):
             duration = datetime.now() - seeder[1]
             if duration > SeederInfo.expire_duration:
                 print(f"Removing {seeder}")

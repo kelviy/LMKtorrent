@@ -82,8 +82,9 @@ class Seeder():
         if status_message:
             print("Successfully added seeder to client")
             print("Uploading file list")
-
-            client_socket.sendto(message, self.tracker_address.get_con())
+            
+            data_addr = Address("127.0.0.1", 11000)
+            client_socket.sendto(message, data_addr.get_con())
         else:
             print("Unsuccessful with adding seeder")
 
@@ -96,7 +97,7 @@ class Seeder():
         return address == self.address
 
     def get_meta_info(self):
-        return self.address.get_con, self.file_list
+        return self.address.get_con(), self.file_list
 
 if __name__ == "__main__":
     main()

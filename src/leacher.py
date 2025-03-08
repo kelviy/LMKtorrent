@@ -1,6 +1,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from packet import Address, MetaData, Request
 import os
+import struct
 
 def main():
     """
@@ -26,10 +27,12 @@ class Leacher:
         Downloads metadata from specified tracker information
         """
         client_socket = socket(AF_INET, SOCK_DGRAM)
-        client_socket.sendto(Request.REQUEST_METADATA.encode(), self.tracker_address.get_con())
+        header = struct.pack(Request.HEADER_FORMAT, Request.REQUEST_METADATA.encode(), -1)
+        client_socket.sendto(header, self.tracker_address.get_con())
 
         seeder_list, server_addr = client_socket.recvfrom(1024)
         self.seeder_list = MetaData.decode(seeder_list)
+        print(self.seeder_list)
 
     def download_file(self, seeder=Address("127.0.0.1", 12500)):
         soc = socket(AF_INET, SOCK_STREAM)
