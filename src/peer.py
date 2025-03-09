@@ -40,6 +40,7 @@ class Peer():
         self.seeder_server_socket = socket(AF_INET,SOCK_STREAM)# establishing server socket for connecting with Peer
         self.seeder_server_socket.bind(self.seeder_addr)
         self.last_check_in = datetime.now()
+        self.numConSockets = 0
 
         current_dir = os.getcwd()
         parent_dir = os.path.dirname(current_dir)
@@ -50,17 +51,18 @@ class Peer():
         
     def start_main_loop(self):
         self.seeder_server_socket.listen(10)
-
+        
         while True:
+            
+            download = input("Do you want to download a file? (y/n)\n")
+            if download == 'y':
 
-            threading.Thread(target=self.download).start()
-
-            connection_socket, Peer_addr = self.seeder_server_socket.accept()
-
-            self.send_file(connection_socket)
-
-            if (datetime.now()-self.last_check_in) >= self.request_interval:
-                self.notify_tracker()
+              t1 =  threading.Thread(target=self.download).start()
+            if self.numConSockets <1:# make sure we dont create infinite conSockets waiting for leachers
+                threading.Thread(target=self.await_leach).start()
+                self.numConSockets += 1
+            else: 
+                print("Too many conSocket threads")
             
 
     def add_seeder(self):
@@ -133,7 +135,7 @@ class Peer():
         self.udp_client_socket.sendto(request, self.tracker_addr)
 
         response, tracker_address = self.udp_client_socket.recvfrom(5120)
-        self.udp_client_socket.close()
+     #   self.udp_client_socket.close() #dunno why we closing
 
         response = response.decode()
 
@@ -186,17 +188,29 @@ class Peer():
                     file.write(part)
 
             print(file_name + " downloaded succesfully!")
-
+            
+            
             #Don't forget to write file names and sizes to text file
         else:
             print("File not found!")
     
-    def download(self):
+    def download(self):# might not even need this method could add directly into loop however does keep loop less cluttered
         print("choose file to download")
         print("1. video.zip")#make dynamic later
         num = input("Enter file number: ")
         self.request_file("video.zip")#will code dynamically later
+        self.add_seeder()
        # return "video1.zip"#will code dynamically later
+    
+    def await_leach(self):
+        connection_socket, Peer_addr = self.seeder_server_socket.accept()
+
+        self.send_file(connection_socket)
+
+        if (datetime.now()-self.last_check_in) >= self.request_interval:
+            self.notify_tracker()
+        self.numConSockets -= 1
+        
 
 
 if __name__ == "__main__":

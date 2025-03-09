@@ -68,21 +68,25 @@ class Tracker():
                 self.udp_server_socket.sendto(response,client_addr)
 
         elif (request[0][0] == Request.ADD_SEEDER):
-            self.seeder_list.append([SeederPeer(client_addr),datetime.now()])
+            
+            self.seeder_list.append([SeederPeer(client_addr),datetime.now()])#might cause issues when reseeding
+
             request.pop(0)
 
             for file in request:
                 file = file.split(" ")
-                    
+                        
                 if file[0] in self.file_list:
 
                     self.file_list[file[0]][1].append(client_addr)
                 else:
                     self.file_list[file[0]] = [int(file[1]),[client_addr]]
                     print(file[0] + " " + file[1])
-                
+                    
             self.udp_server_socket.sendto(Request.CON_EST.encode(),client_addr)
             print("Seeder added: " + str(client_addr))
+           
+
 
         else:
             print(f"Request not recognised: {request[0][0]}")
