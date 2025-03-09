@@ -30,9 +30,9 @@ class Seeder():
     def __init__(self,seeder_addr,tracker_addr):
         self.seeder_addr = seeder_addr
         self.tracker_addr = tracker_addr
-        self.tracker_client_socket = socket(AF_INET, SOCK_DGRAM)
+        self.tracker_client_socket = socket(AF_INET, SOCK_DGRAM) #talking to server
         self.tracker_client_socket.bind(self.seeder_addr)
-        self.seeder_server_socket = socket(AF_INET,SOCK_STREAM)
+        self.seeder_server_socket = socket(AF_INET,SOCK_STREAM)# establishing server socket for connecting with leacher
         self.seeder_server_socket.bind(self.seeder_addr)
         self.last_check_in = datetime.now()
 
@@ -41,7 +41,7 @@ class Seeder():
         file_path = os.path.join(parent_dir, 'data', 'file_list.txt')
 
         with open(file_path, mode='r') as file:
-            self.file_list = file.read()
+            self.file_list = file.read()#gets seeder file list
         
     def start_main_loop(self):
         self.seeder_server_socket.listen(10)

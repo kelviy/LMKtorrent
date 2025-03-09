@@ -9,13 +9,13 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 
 def main():
-    leacher_ip_address = input("Enter IP address: ")
-    leacher_port_num = int(input("Enter port number: "))
+    ip_address = input("Enter IP address: ")
+    port_num = int(input("Enter port number: "))
     file_name = input("Enter the name of the file that you want to download: ")
-    leacher_addr = (leacher_ip_address,leacher_port_num)
+    peer_addr = (ip_address,port_num)
     tracker_addr = ("127.0.0.1",12500)
 
-    leacher = Leacher(leacher_addr, tracker_addr)
+    leacher = Leacher(peer_addr, tracker_addr)
     leacher.request_file(file_name)
 
     #Write the file name and its size to a textfile file_list.txt in ./data/
@@ -66,14 +66,14 @@ class Leacher:
             if len(response) > 1:
                 downloaders = []
 
-                with ThreadPoolExecutor(max_workers=8) as thread_pool:
+                with ThreadPoolExecutor(max_workers=8) as thread_pool:##
                     futures = []
 
                     for seeder in response:
                         futures.append(thread_pool.submit(Leacher.get_file_part, file_name, seeder[0], seeder[1], seeder[2] ,file_parts))
 
                     for future in futures:
-                        future.result()
+                        future.result()#join for thread
 
             else:
                 print(type(response[0][1]))
