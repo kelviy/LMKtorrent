@@ -3,7 +3,7 @@
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
-from packet import Request
+from packet import Request, File
 from datetime import timedelta, datetime
 import os
 
@@ -70,9 +70,33 @@ class Seeder():
         request = Request.NOTIFY_TRACKER.encode()
         self.tracker_client_socket.sendto(request,self.tracker_addr)
         self.last_check_in = datetime.now()
-    #def send_file(file_name):
+    
+    def send_file(self, connection_socket):
+        request = connection_socket.recv(1024)
 
-        
+        request = request.decode()
+        request = request.splitlines()
+
+        request[0] = request[0].split(" ")
+        request[1] = request[1].split(" ")
+        request[1][0] = int(request[1][0])
+        request[1][1] = int(request[1][1])
+
+        if request[0][0] == Request.SEND_FILE_PART:
+            with open(f"data/{request[0][1]}", mode = 'rb') as file:
+                file.read(request[1][1])
+
+                for i in range(request[1][0]):
+                    connection_socket.send(file.read(File.chunk_size))
+
+            leacher_addr = connection_socket.getpeername()
+
+            print("File parts sent to " + str(leacher_addr))  
+
+        else:
+            print("Unknown request: " + request[0][0])
+
+        connection_socket.close()    
 
 if __name__ == "__main__":
     main()
