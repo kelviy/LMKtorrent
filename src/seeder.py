@@ -83,7 +83,7 @@ class Seeder():
         request[1][1] = int(request[1][1])
 
         if request[0][0] == Request.GET_FILE_PART:
-            with open(f"data/{request[0][1]}", mode = 'rb') as file:
+            with open(os.path.join(os.path.dirname(os.getcwd()), 'data', request[0][1]), mode = 'rb') as file:
                 file.read(request[1][1])
 
                 for i in range(request[1][0]):
