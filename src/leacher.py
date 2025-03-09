@@ -4,12 +4,8 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from packet import Request, File
 from concurrent.futures import ThreadPoolExecutor
-import ast
-from threading import Thread
 import os
-import struct
 import json
-import math
 
 def main():
     """
@@ -30,7 +26,7 @@ def main():
     local_leacher = Leacher()
 
     print(f"Files Available : ")
-    file_list_temp = local_leacher.file_list.keys()
+    file_list_temp = list(local_leacher.file_list.keys())
     for index, file_name in enumerate(file_list_temp):
         print(f"{index}: {file_name} for size {local_leacher.file_list[file_name]}")
 
@@ -39,7 +35,7 @@ def main():
     download_files_req = usr_ans.split(" ")
 
     for file_no in download_files_req:
-        local_leacher.download_file(file_list_temp[int(file_no)]) 
+        local_leacher.request_file(file_list_temp[int(file_no)]) 
 
 
 class Leacher:
@@ -58,7 +54,7 @@ class Leacher:
         tracker_socket.sendto(message.encode(), self.tracker_address)
         list, addr = tracker_socket.recvfrom(1024)
         seeder_list = json.loads(list.decode())
-        print("Obtained Seeder List:", self.seeder_list)
+        print("Obtained Seeder List:", seeder_list)
         tracker_socket.close()
         return seeder_list
 
@@ -69,7 +65,7 @@ class Leacher:
         tracker_socket.sendto(message.encode(), self.tracker_address)
         list, addr = tracker_socket.recvfrom(1024)
         file_list = json.loads(list.decode())
-        print("Obtained File List:", self.file_list)
+        print("Obtained File List:", file_list)
         tracker_socket.close()
         return file_list
 
@@ -81,14 +77,14 @@ class Leacher:
             soc = socket(AF_INET, SOCK_STREAM)
             soc.connect((ip, port))
 
-            soc.sendall(Request.REQUEST_CONNECTION)
+            soc.sendall(Request.REQUEST_CONNECTION.encode())
             response = soc.recv(1024).decode()
 
             if response == Request.CONNECTED:
                 list_seeder_con.append(soc)
 
         # exits over the limit seeders
-        if len(list_seeder_con > self.max_parallel_seeders):
+        if len(list_seeder_con) > self.max_parallel_seeders:
             for i in range(len(list_seeder_con) - self.max_parallel_seeders):
                 soc = list_seeder_con.pop()
                 soc.sendall(Request.EXIT)
@@ -112,8 +108,7 @@ class Leacher:
                     future.result()
 
         else:
-            print(type(response[0][1]))
-            Leacher.get_file_part(file_name, int(response[0][0]), int(response[0][1]),response[0][2],file_parts)
+            Leacher.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
 
         os.makedirs("tmp", exist_ok=True)
         file_path = os.path.join("tmp", file_name)
@@ -209,7 +204,7 @@ class Leacher:
 
             
     #TODO: fix parallel download and sending
-    def get_file_part(file_name, num_chunks, send_after, seeder_addr, file_parts):
+    def get_file_part(file_name, num_chunks, send_after, seeder_soc, file_parts):
         request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
         request = request.encode()
 
@@ -218,15 +213,12 @@ class Leacher:
         print(type(send_after))
         num_chunks_to_skip = send_after//File.chunk_size
 
-        client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect(seeder_addr)
-
-        client_socket.send(request)
+        seeder_soc.send(request)
 
         for i in range(num_chunks):
-            file_parts[num_chunks_to_skip + i] = client_socket.recv(File.chunk_size)
+            file_parts[num_chunks_to_skip + i] = seeder_soc.recv(File.chunk_size)
 
-        client_socket.close()
+        seeder_soc.close()
 
 if __name__ == "__main__":
     main()
