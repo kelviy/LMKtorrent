@@ -5,7 +5,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from packet import Request, File
 import ast
-from multiprocessing import Process
+from threading import Thread
 import os
 
 def main():
@@ -67,7 +67,7 @@ class Leacher:
                 downloaders = []
 
                 for seeder in response:
-                    process = Process(target=Leacher.get_file_part, args=(file_name,seeder[0],seeder[1],seeder[2],file_parts))
+                    process = Thread(target=Leacher.get_file_part, args=(file_name,seeder[0],seeder[1],seeder[2],file_parts))
                     downloaders.append(process)
 
                     process.start()
