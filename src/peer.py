@@ -3,14 +3,18 @@
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
+from tkinter import Tk
 from packet import Request, File
 from datetime import timedelta, datetime
 import os
 import ast
 from concurrent.futures import ThreadPoolExecutor
 import threading
+from tkinter import Canvas, PhotoImage, Tk, Canvas, Entry, Text, Button, PhotoImage
+import gui
 
 def main():
+    
     ip_address = input("Enter IP address: ")
     port_num = int(input("Enter port number: "))
 
@@ -18,7 +22,7 @@ def main():
     tracker_address = ("127.0.0.1", 12500)
 
     seeder = Peer(peer_address, tracker_address)
-
+    
     connected = seeder.add_seeder()
 
     if connected:
@@ -51,13 +55,16 @@ class Peer():
         
     def start_main_loop(self):
         self.seeder_server_socket.listen(10)
-        
+        window = Tk()
+        app = gui.MyWindow(window)
+        window.mainloop()
         while True:
             
-            download = input("Do you want to download a file? (y/n)\n")
-            if download == 'y':
+          # download = input("Do you want to download a file? (y/n)\n")
+            if app.get_bool == True:
 
               t1 =  threading.Thread(target=self.download).start()
+              app.reset_bool()
             if self.numConSockets <1:# make sure we dont create infinite conSockets waiting for leachers
                 threading.Thread(target=self.await_leach).start()
                 self.numConSockets += 1
