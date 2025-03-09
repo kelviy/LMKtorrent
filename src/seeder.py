@@ -12,7 +12,9 @@ def main():
     port_num = int(input("Enter port number: "))
 
     seeder_address = (ip_address, port_num)
-    tracker_address = ("127.0.0.1", 12500)
+
+    #Changed to laptop's IP address (Mark's) for testing.
+    tracker_address = ("196.47.216.159", 12500)
 
     seeder = Seeder(seeder_address, tracker_address)
 

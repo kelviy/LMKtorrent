@@ -7,7 +7,7 @@ from datetime import timedelta
 class File():
     """Stores file information"""
 
-    chunk_size = 5000
+    chunk_size = 1024
 
     @staticmethod
     def get_file_send_rule(file_size, seeder_list):
