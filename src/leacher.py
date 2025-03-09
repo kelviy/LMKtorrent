@@ -5,7 +5,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from packet import Request, File
 import ast
-from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 import os
 
 def main():
@@ -66,14 +66,15 @@ class Leacher:
             if len(response) > 1:
                 downloaders = []
 
-                for seeder in response:
-                    process = Thread(target=Leacher.get_file_part, args=(file_name,seeder[0],seeder[1],seeder[2],file_parts))
-                    downloaders.append(process)
+                with ThreadPoolExecutor(max_workers=8) as thread_pool:
+                    futures = []
 
-                    process.start()
+                    for seeder in response:
+                        futures.append(thread_pool.submit(Leacher.get_file_part, file_name, seeder[0], seeder[1], seeder[2] ,file_parts))
 
-                for process in downloaders:
-                    process.join()
+                    for future in futures:
+                        future.result()
+
             else:
                 print(type(response[0][1]))
                 Leacher.get_file_part(file_name, int(response[0][0]), int(response[0][1]),response[0][2],file_parts)
@@ -86,6 +87,8 @@ class Leacher:
                     file.write(part)
 
             print(file_name + " downloaded succesfully!")
+
+            #Don't forget to write file names and sizes to text file
         else:
             print("File not found!")
 
