@@ -1,63 +1,90 @@
-import json
+#CSC3002F Group Assignment 2025
+#Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
+
 from socket import socket
+import math
+
+class File():
+    """Stores file information"""
+
+    chunk_size = 5000
+
+    @staticmethod
+    def get_file_send_rule(file_size, seeder_list):
+        # Used in seeder exec send (gets the )
+        num_chunks = math.ceil(file_size/File.chunk_size)
+        num_chunks_per_seeder = num_chunks//len(seeder_list)
+        add_chunks = num_chunks % len(seeder_list)
+
+        file_send_rule = []
+
+        file_send_rule.append((num_chunks, len(seeder_list)))
+
+        start_sending_from = 0
+
+        for i in range(len(seeder_list)):
+            if i == (len(seeder_list) - 1):
+                file_send_rule.append((num_chunks_per_seeder+add_chunks, start_sending_from, seeder_list[i]))
+
+            else:
+                file_send_rule.append((num_chunks_per_seeder, start_sending_from, seeder_list[i]))
+                start_sending_from += num_chunks_per_seeder*File.chunk_size
+
+        return file_send_rule
 
 class Request():
-    ADD_SEEDER = 'add_seeder'
-    NOTIFY_TRACKER = 'notify_tracker'
-    REQUEST_METADATA = 'request_meta'
+    # Information is sent in a string delimited by \n
 
+    ## TRACKER
+    #Sent by seeder to register with the tracker. (Tracker stores seeder info)
+    # Format: <type> \n (tcp_address)
+    ADD_SEEDER = "add_seeder"
+    # Sent by seeder to update ping time of seeder
+    # Format: <type> \n (tcp_address) 
+    PING_TRACKER = "ping_tracker"
+    # Sent by leecher to request seeder_list
+    REQUEST_SEEDER_LIST = 'request_seeder_list'
+    # Sent by the seeder to upload a file info list (Changes files info)
+    UPLOAD_FILE_LIST = 'upload_file_list'
+    # Sent by leecher to request file list
+    REQUEST_FILE_LIST = 'request_file_list'
+    #Approximately every 5 minutes, the seeder will send the tracker a notify_tracker message to indicate that they are still active.
+    # (not used at the moment) Sent from (1)tracker -> seeder / (2)leacher -> tracker that TCP server is ready to receive
+    TCP_PERMIT = "tcp_permit"
 
-    HEADER_FORMAT = '16si'
-    STATUS_FORMAT = '?'
+    ## SEEDER
+    #Sent from seeder to leecher when a successful connection has been established.
+    CONNECTED = "connected"
+    # Sent from seeder to leecher to indicate that it cannot connect at the moment
+    AWAY = 'away'
+    # (not used at the moment) Sent from seeder to leacher to inform that the seeder has put the leecher in a queue
+    QUEUE = 'queue'
 
+    ## LEECHER
+    #Used by leacher to ask for connection to seeder
+    REQUEST_CONNECTION = "request_connection"
+    #Used to ask seeder for a specific file chunk that they have.
+    #Typically will say:
+    #   "request_file_chunk \n [file_name, num_chunks, send_after]"
+    REQUEST_FILE_CHUNK = "send_file_chunk"
+    # Sent by leecher to seeder to ask to ask to leave queue or leave connection
+    EXIT = "exit"
+
+     # request execution encounted errors
+    # Has the format:
+    #   "error <error message>"
+    # - error message can be that the file hasn't been found
+    ERROR = "error"
+    # request completed without any problems
+    SUCCESS = "success"
+    # acknowledgement that file received successfully
+    ACK = "acknolwedgement"
+
+    # ensuring all data in tcp is received
     @staticmethod
-    def recvall(msg: bytes, socket: socket):
-        """
-        Assumes that first 4 bytes (int) sent is always the size of message
-        """
-        pass
+    def recvall(socket: socket, chunk_size, message_size):
+        total_bytes_received = 0
 
-
-class Address():
-    """
-    Stores ip address and port number for seeder, leecher, tracker... 
-    """
-    def get_con(self) -> tuple:
-        return self.ip, self.port
-
-    def __init__(self, ip: str, port: int):
-        self.ip = ip  
-        self.port = port
-    
-    def __eq__(self, other):
-        if other.ip == self.ip and other.port == self.port:
-            return True
-        return False
-
-    def __repr__(self):
-        return f"Address({self.ip}, {self.port})"
-   
-
-class MetaData():
-    """ 
-    MetaData that is sent to the leecher
-    """
-    # 12.7 MB (below number is in bytes)
-    file_size = 12_665_642
-    file_name = "video.zip"
-    # 1 MB
-    send_chunk_size = 5_000
-
-    def __init__(self, seeder_list: list):
-        # a list of seeders. Check element of the list is a tuple containing ip address and port number [ip, port]
-        self.seeder_list = seeder_list 
-
-    def encode(self) -> bytes:
-        print(self.seeder_list)
-        return json.dumps(self.seeder_list).encode()
-
-    @staticmethod
-    def decode(data: bytes) -> tuple:
-        data = json.loads(data.decode())
-        return tuple(data)
-
+        while total_bytes_received < message_size:
+            current_bytes_received = socket.recv(min(message_size-total_bytes_received, chunk_size))
+            total_bytes_received += len(current_bytes_received)

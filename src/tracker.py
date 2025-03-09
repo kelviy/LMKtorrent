@@ -1,9 +1,10 @@
-import json
-from packet import Address, Request, MetaData
-from datetime import datetime, timedelta
+#CSC3002F Group Assignment 2025
+#Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
+
 from socket import socket, AF_INET, SOCK_DGRAM
-import struct
-from seeder import Seeder
+from datetime import datetime, timedelta
+from packet import Request
+import json
 
 def main():
     local_tracker = Tracker()
@@ -12,110 +13,116 @@ def main():
 
 class Tracker():
     def __init__(self):
-        self.seeder_info = SeederInfo()
-
-        self.address = Address("127.0.0.1", 12500)
+        self.address = ("127.0.0.1", 12500)
         self.udp_server_socket = socket(AF_INET, SOCK_DGRAM)
-        self.udp_server_socket.bind(self.address.get_con())
+        self.udp_server_socket.bind(self.address)
+
+        self.seeder_time_out = timedelta(minutes=10)
+        self.file_list = {}
+        # Elements stored as:
+        # [seeder_addr: tuple, last_check_time: datatime]
+        self.seeder_list = []
 
         print("Tracker is up")
 
     def start_main_loop(self):
         while True:
-            header, client_addr = self.udp_server_socket.recvfrom(20)
-            client_addr = Address(client_addr[0], client_addr[1])
-            request, message_size = struct.unpack(Request.HEADER_FORMAT, header)
-            request = request.decode().replace("\x00", "")
-            print("Connect Received from", client_addr)
-            print("Msg:", request, "; next message size", message_size)
+            self.remove_inactive()
+
+            # potential problem (add_seeder) if file list data is too large (can switch to tcp instead)
+
+            # receive payload of header and additional information delimited by \n
+            # TODO: add additional tcp connection for file transfer. 
+            payload, client_addr = self.udp_server_socket.recvfrom(1024)
+            payload = payload.decode().splitlines()
+            # first element is the header
+
+            #debug info
+            print("Connection Received from:", client_addr)
+            print("Request Message:", payload[0])
+            print("Payload information:", payload)
             
-            # new thread
-            self.seeder_info.remove_inactive()
-           
-            print(self.exec_request(request, message_size, client_addr))
-            
+            # send in payload containing header and additional information to exec function
+            # exec_request function returns a string containing error if a problem has occured. 
+            # Else return True when request completed correctly.
+            exec_info = self.exec_request(payload, client_addr)
+            if exec_info == True:
+                 self.udp_server_socket.sendto(Request.SUCCESS.encode(), client_addr)
+            else:
+                print("Error:", exec_info)
+                self.udp_server_socket.sendto(f"{Request.ERROR}\n{exec_info}".encode(), client_addr)
+                 
           
-    def exec_request(self, request, message_size, client_addr) -> bool:
-        match request:
+    def exec_request(self, payload, client_addr):
+        match payload[0]:
             case Request.ADD_SEEDER:
-                return self.add_seeder(client_addr, message_size)
-            case Request.NOTIFY_TRACKER:
-                self.seeder_info.seeder_update_check(client_addr)
-                print("Updated ", client_addr)
-                return True
-            case Request.REQUEST_METADATA:
-                meta = MetaData(self.seeder_info.get_seeder_list())
-                self.udp_server_socket.sendto(meta.encode(), client_addr.get_con())
-                print("Sent Meta Data to:", client_addr)
-                return True
+                return self.add_seeder(client_addr, payload[1])
+            case Request.UPLOAD_FILE_LIST:
+                return self.update_file_list(payload[1])
+            case Request.REQUEST_SEEDER_LIST:
+                return self.send_seeder_list(client_addr)
+            case Request.REQUEST_FILE_LIST:
+                return self.send_file_list(client_addr)
+            case Request.PING_TRACKER:
+               return self.ping_tracker(client_addr, payload[1])
+            case _:
+                  print(f"Request not recognised: {payload[0]}")
 
-
-        return False
-
-    def add_seeder(self, client_address, message_size):
-        self.seeder_info.add_seeder(client_address)
-        print("Added ", client_address)
-        self.udp_server_socket.sendto(struct.pack(Request.STATUS_FORMAT, True), client_address.get_con())
-        
-        #udp_data_socket
-        udp_data_socket = socket(AF_INET, SOCK_DGRAM)
-        data_address = Address("127.0.0.1", 11000)
-        udp_data_socket.bind(data_address.get_con())
-
-        data, client_addr = udp_data_socket.recvfrom(message_size)
-        
-        udp_data_socket.close()
-
-        file_list = json.loads(data.decode())
-        
-        if Address(client_addr[0], client_addr[1]) == client_address:
-            self.seeder_info.update_file_list(client_address, file_list)
-            print("Uploaded File List:", file_list)
-            return True
-        
-        return False
-
-class SeederInfo():
-    """
-    Responsible for keeping active seeders and their info
-    """
-    expire_duration = timedelta(minutes=10)
-
-    def __init__(self):
-        self.seeder_list = []
-
-    def add_seeder(self, address: Address):
+    def add_seeder(self, client_address, payload):
         last_check = datetime.now()
-        temp_seeder = Seeder(address, None, None)
-        self.seeder_list.append([temp_seeder, last_check])
+        address = json.loads(payload)
 
-    def update_file_list(self, address: Address, file_list):
+        #checks for unique seeders
         for seeder in self.seeder_list:
-            if seeder[0].equal_address(address):
-                seeder[0].file_list = file_list
-                return True
-        return False
+             if seeder[0] == address:
+                  return "Seeder is already Registered"
+             
+        self.seeder_list.append([address, last_check])
+        print("Added: ", address, ".... Request from:", client_address)
+        return True
 
-    def seeder_update_check(self, seeder_address: Address):
+    def update_file_list(self, payload):
+        self.file_list = json.loads(payload)
+
+        # for file_str in payload:
+        #     file_info = file_str.split(" ")
+            
+        #     #checks for unique files
+        #     if file_info[0] in self.file_list:
+        #         return "File names are not unique"
+        #     else:
+        #          self.file_list[file_info[0]] = file_info[1]
+        
+        print("Successfully updated file list")
+        return True 
+
+    def send_seeder_list(self, client_address):
+        seeder_only_list = []
         for seeder in self.seeder_list:
-            if seeder[0].equal_address(seeder_address):
+            seeder_only_list.append(seeder[0])
+
+        # encodes the list of a (list containing ip and port) using json.dumps to string
+        self.udp_server_socket.sendto(json.dumps(seeder_only_list).encode(), client_address)
+        print("Sent seeder list to:", client_address)
+        return True
+    
+    def send_file_list(self, client_address):
+        self.udp_server_socket.sendto(json.dumps(self.file_list).encode(), client_address)
+        print("Sent File List to:", client_address)
+
+    def ping_tracker(self, client_addr_udp, client_addr_tcp):
+        client_addr_tcp = json.loads(client_addr_tcp)
+        
+        for seeder in self.seeder_list:
+            if seeder[0] == client_addr_tcp:
                 seeder[1] = datetime.now()
+                print("Ping Received from:", client_addr_udp, "... to update ping time on", client_addr_tcp)
                 return True
-        print("Unknown Seeder. Unable to Update")
-        return False
-
+        return "Seeder ID not in found with registed seeders"
+    
     def remove_inactive(self):
-        for index, seeder in reversed(tuple(enumerate(self.seeder_list))):
-            duration = datetime.now() - seeder[1]
-            if duration > SeederInfo.expire_duration:
-                print(f"Removing {seeder}")
-                self.seeder_list.pop(index)
-
-    def get_seeder_list(self):
-        seeder_list = []
-        for seeder in self.seeder_list:
-            seeder_list.append(seeder[0].get_meta_info())
-        return seeder_list
+        # list comprehension for filtering inactive seeders out (seeders that haven't responded within time_out period)
+        self.seeder_list = [seeder for seeder in self.seeder_list if (datetime.now() - seeder[1]) <= self.seeder_time_out]
 
 if __name__ == "__main__":
     main()
