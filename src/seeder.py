@@ -82,7 +82,7 @@ class Seeder():
         request[1][0] = int(request[1][0])
         request[1][1] = int(request[1][1])
 
-        if request[0][0] == Request.SEND_FILE_PART:
+        if request[0][0] == Request.GET_FILE_PART:
             with open(f"data/{request[0][1]}", mode = 'rb') as file:
                 file.read(request[1][1])
 

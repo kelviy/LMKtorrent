@@ -12,7 +12,7 @@ class File():
     @staticmethod
     def get_file_send_rule(file_size, seeder_list):
         num_chunks = math.ceil(file_size/File.chunk_size)
-        num_chunks_per_seeder = int(num_chunks/len(seeder_list))
+        num_chunks_per_seeder = num_chunks//len(seeder_list)
         add_chunks = num_chunks % len(seeder_list)
 
         file_send_rule = []
@@ -23,10 +23,10 @@ class File():
 
         for i in range(len(seeder_list)):
             if i == (len(seeder_list) - 1):
-                file_send_rule.append([num_chunks_per_seeder+add_chunks, start_sending_from, seeder_list[i]])
+                file_send_rule.append((num_chunks_per_seeder+add_chunks, start_sending_from, seeder_list[i]))
 
             else:
-                file_send_rule.append([num_chunks_per_seeder, start_sending_from, seeder_list[i]])
+                file_send_rule.append((num_chunks_per_seeder, start_sending_from, seeder_list[i]))
                 start_sending_from += num_chunks_per_seeder*File.chunk_size
 
         return file_send_rule

@@ -46,6 +46,9 @@ class Tracker():
 
             if not(request[0][1] in self.file_list):
                 self.udp_server_socket.sendto(Request.FILE_NOT_FOUND.encode(),client_addr)
+            elif (len(self.file_list[request[0][1]][1]) == 0):
+                self.udp_server_socket.sendto(Request.FILE_NOT_FOUND.encode(),client_addr)
+
             else:
                 file_size = self.file_list[request[0][1]][0]
                 seeder_list = self.file_list[request[0][1]][1]
@@ -55,8 +58,10 @@ class Tracker():
                 response = Request.FILE_FOUND + "\n"
                 response += str(file_send_rule[0][0]) + " " + str(file_send_rule[0][1])
 
-                for i in range(1, file_send_rule[0][1] + 1):
+                for i in range(1, len(seeder_list) + 1):
                     response += "\n" + str(file_send_rule[i][0]) + " " + str(file_send_rule[i][1]) + " " + str(file_send_rule[i][2])
+
+                print(response)
                     
                 response = response.encode()
 

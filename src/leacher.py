@@ -24,18 +24,21 @@ class Leacher:
     def __init__(self, leacher_addr, tracker_addr):
         self.tracker_addr = tracker_addr
         self.leacher_addr = leacher_addr
+        self.udp_client_socket = socket(AF_INET, SOCK_DGRAM)
+        self.udp_client_socket.bind(self.leacher_addr)
 
     def request_file(self, file_name):
-        udp_client_socket = socket(AF_INET, SOCK_DGRAM)
-        udp_client_socket.bind(self.leacher_addr)
+        
         request = (Request.REQUEST_FILE + " " + file_name).encode()
         
-        udp_client_socket.sendto(request, self.tracker_addr)
+        self.udp_client_socket.sendto(request, self.tracker_addr)
 
-        response, tracker_address = udp_client_socket.recvfrom(5120)
-        udp_client_socket.close()
+        response, tracker_address = self.udp_client_socket.recvfrom(5120)
+        self.udp_client_socket.close()
 
         response = response.decode()
+
+        print(response)
 
         response = response.splitlines()
 
@@ -47,12 +50,17 @@ class Leacher:
 
             file_parts = [None]*chunking_info[0]
 
-            for seeder in response:
-                rule = seeder.split(" ")
-                rule[0] = int(rule[0])
-                rule[1] = int(rule[1])
+            for i in range(len(response)):
+                line = response[i]
+                response[i] = []
+                response[i].append(int(line[0:line.find(" ")]))
+                line = line[line.find(" ")+1:]
+                #print(response[i][0])
+                response[i].append(int(line[0:line.find(" ")]))
+                line = line[line.find(" ") + 1:]
+                #print(response[i][1])
 
-                rule[2] = ast.literal_eval(rule[2])
+                response[i].append(ast.literal_eval(line))
 
 
             if len(response) > 1:
@@ -67,7 +75,8 @@ class Leacher:
                 for process in downloaders:
                     process.join()
             else:
-                Leacher.get_file_part(file_name, response[0][0], response[0][1],response[0][2],file_parts)
+                print(type(response[0][1]))
+                Leacher.get_file_part(file_name, int(response[0][0]), int(response[0][1]),response[0][2],file_parts)
 
             os.makedirs("tmp", exist_ok=True)
             file_path = os.path.join("tmp", file_name)
@@ -83,12 +92,13 @@ class Leacher:
             
 
     def get_file_part(file_name, num_chunks, send_after, seeder_addr, file_parts):
-        request = Request.get_file_part + " " + file_name + "\n" + str(num_chunks) + " " + str(send_after)
+        request = Request.GET_FILE_PART + " " + file_name + "\n" + str(num_chunks) + " " + str(send_after)
         request = request.encode()
 
         #send_after/File.chunk_size will be a whole number.
         #As send_after = File.chunk_size*num_chunks
-        num_chunks_to_skip = int(send_after/File.chunk_size)
+        print(type(send_after))
+        num_chunks_to_skip = send_after//File.chunk_size
 
         client_socket = socket(AF_INET, SOCK_STREAM)
         client_socket.connect(seeder_addr)
@@ -99,3 +109,6 @@ class Leacher:
             file_parts[num_chunks_to_skip + i] = client_socket.recv(File.chunk_size)
 
         client_socket.close()
+
+if __name__ == "__main__":
+    main()
