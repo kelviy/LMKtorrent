@@ -68,8 +68,14 @@ class Tracker():
                 self.udp_server_socket.sendto(response,client_addr)
 
         elif (request[0][0] == Request.ADD_SEEDER):
-            
-            self.seeder_list.append([SeederPeer(client_addr),datetime.now()])#might cause issues when reseeding
+            bool = False
+            for i in self.seeder_list:# doesnt make sense now since all peers are added as seeder at start
+                if i[0].address == client_addr:
+                    bool = True
+                    break 
+
+            if bool == False:
+                self.seeder_list.append([SeederPeer(client_addr),datetime.now()])#might cause issues when reseeding
 
             request.pop(0)
 
@@ -77,8 +83,14 @@ class Tracker():
                 file = file.split(" ")
                         
                 if file[0] in self.file_list:
+                    bool = False
+                    for i in self.file_list[file[0]][1]:
+                        if client_addr == i:
+                            bool = True
+                            break
+                    if bool == False:
 
-                    self.file_list[file[0]][1].append(client_addr)
+                        self.file_list[file[0]][1].append(client_addr)
                 else:
                     self.file_list[file[0]] = [int(file[1]),[client_addr]]
                     print(file[0] + " " + file[1])

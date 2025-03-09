@@ -55,16 +55,16 @@ class Peer():
         
     def start_main_loop(self):
         self.seeder_server_socket.listen(10)
-        window = Tk()
-        app = gui.MyWindow(window)
-        window.mainloop()
+       # window = Tk()
+      #  app = gui.MyWindow(window)
+       # window.mainloop()
         while True:
             
-          # download = input("Do you want to download a file? (y/n)\n")
-            if app.get_bool == True:
-
+            download = input("Do you want to download a file? (y/n)\n")
+            if download == "y":
+#if app.get_bool == True:
               t1 =  threading.Thread(target=self.download).start()
-              app.reset_bool()
+             # app.reset_bool()
             if self.numConSockets <1:# make sure we dont create infinite conSockets waiting for leachers
                 threading.Thread(target=self.await_leach).start()
                 self.numConSockets += 1
