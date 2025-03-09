@@ -3,6 +3,7 @@ from packet import Request, Address, MetaData
 import os
 import json
 import struct
+import hashlib
 
 def main():
     # specify folder to make available to leechers
@@ -35,16 +36,42 @@ class Seeder():
             self.file_list = os.listdir(folder_path)
             self.tracker_address = Address("127.0.0.1", 12500)
 
-    def send_file(self, leecher_socket: socket):
-        with open(f'data/{MetaData.file_name}', mode='rb') as file:
-            file_part = file.read(MetaData.send_chunk_size)
-            count =0
-            while file_part:
-                # leecher_socket.send(bool.to_bytes(True))
-                sent = leecher_socket.send(file_part)
-                print(f"{count}: {sent}")
-                count += 1
+    def send_file_part(self, leecher_socket: socket, file_name, chunk_start, chunk_end, chunk_size = MetaData.send_chunk_size):
+        """
+        Sends file data requested 
+        1. Computes the file chunk hash and sends it to the leacher
+        2. Sends the file data
+        3. Leacher confirms that file data integrity is kept by computing it's own hash of the file data and checking if the hash sent equals the hash computed
+        4. Leacher sends back confirmation for the seeder to send the next file chunk
+        """
+        file_chunk_list = []
+
+        #reads section of file requested into memory
+        start_file_position = chunk_size * chunk_start 
+        with open(f'data/{file_name}', mode='rb') as file:
+            for _ in range(chunk_end-chunk_start):
+                file.seek(start_file_position)
                 file_part = file.read(MetaData.send_chunk_size)
+                file_chunk_list.append(file_part)
+
+        index = 0
+        while index < len(file_chunk_list):
+            hash = hashlib.sha256(file_chunk_list[index]).digest()
+            leecher_socket.sendall(hash)
+            leecher_socket.sendall(file_chunk_list[index])
+            
+
+            leecher_socket.recv(
+
+
+
+        count =0
+        while file_part:
+            # leecher_socket.send(bool.to_bytes(True))
+            sent = leecher_socket.send(file_part)
+            print(f"{count}: {sent}")
+            count += 1
+            file_part = file.read(MetaData.send_chunk_size)
 
         # print("Sent false")
         # leecher_socket.send(bool.to_bytes(False))

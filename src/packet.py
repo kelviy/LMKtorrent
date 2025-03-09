@@ -1,4 +1,5 @@
 import json
+from socket import socket
 
 class Request():
     ADD_SEEDER = 'add_seeder'
@@ -9,6 +10,14 @@ class Request():
     HEADER_FORMAT = '16si'
     STATUS_FORMAT = '?'
 
+    @staticmethod
+    def recvall(msg: bytes, socket: socket):
+        """
+        Assumes that first 4 bytes (int) sent is always the size of message
+        """
+        pass
+
+
 class Address():
     """
     Stores ip address and port number for seeder, leecher, tracker... 
@@ -17,7 +26,7 @@ class Address():
         return self.ip, self.port
 
     def __init__(self, ip: str, port: int):
-        self.ip = ip
+        self.ip = ip  
         self.port = port
     
     def __eq__(self, other):
