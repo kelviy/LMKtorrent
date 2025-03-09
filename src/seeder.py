@@ -45,11 +45,9 @@ class Seeder():
         
     def start_main_loop(self):
         self.seeder_server_socket.listen(10)
-        num_requests = 0
 
         while True:
             connection_socket, leacher_addr = self.seeder_server_socket.accept()
-            num_requests += 1
 
             self.send_file(connection_socket)
 
