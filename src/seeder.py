@@ -114,8 +114,8 @@ class Seeder():
         #reads section of file requested into memory
         start_file_position = send_after
         with open(f'data/{file_name}', mode='rb') as file:
+            file.seek(start_file_position)
             for _ in range(num_chunks):
-                file.seek(start_file_position)
                 file_part = file.read(File.chunk_size)
                 file_chunk_list.append(file_part)
 
@@ -127,11 +127,11 @@ class Seeder():
 
             print(f"Sent {File.chunk_size} bytes. Hash computed: {hash}")
 
-            response = leecher_socket.recv(2048)
+            response = leecher_socket.recv(2048).decode()
             if response == Request.ACK:
                 index += 1
             else:
-                continue
+                print("File Acknowledgement Failed... Resending")
 
         print("Completed Sending File Chunk")
 

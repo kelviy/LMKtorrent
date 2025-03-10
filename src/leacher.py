@@ -4,6 +4,7 @@
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from packet import Request, File
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import os
 import json
 
@@ -215,9 +216,24 @@ class Leacher:
 
         seeder_soc.send(request)
 
-        for i in range(num_chunks):
-            file_parts[num_chunks_to_skip + i] = seeder_soc.recv(File.chunk_size)
+        index = 0
+        while index < num_chunks:
+            # recieve hash and file
+            received_hash = seeder_soc.recv(32)
+            file_chunk = seeder_soc.recv(File.chunk_size)
 
+            # computer and equate hashes
+            file_hash = hashlib.sha256(file_chunk).digest()
+
+            if file_hash == received_hash:
+                print("hashes are equal")
+                seeder_soc.send(Request.ACK.encode())
+                file_parts[num_chunks_to_skip + index] = file_chunk
+                index += 1
+            else:
+                seeder_soc.send(Request.ERROR.encode())
+                print("File failed. Not saving chunk")
+  
         seeder_soc.close()
 
 if __name__ == "__main__":
