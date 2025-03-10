@@ -132,7 +132,7 @@ class Seeder():
                 leecher_socket.sendall(hash)
                 leecher_socket.sendall(file_chunk_list[index])
 
-                print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed: {hash}")
+                print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}")
 
                 response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:
@@ -146,8 +146,8 @@ class Seeder():
 
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
-        except Exception:
-            print("Exception in send file_thread. File is not sent correctly?")
+        except Exception as e:
+            print(f"Exception in send file_thread. File is not sent correctly?\n{e}")
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
 

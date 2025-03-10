@@ -239,7 +239,7 @@ class Leacher:
                 seeder_soc.sendall(Request.ACK.encode())
             else:
                 seeder_soc.sendall(Request.NOT_ACK.encode())
-                print(f"{index}: File failed. Not saving chunk")
+                print(f"{index}: File failed. Not saving chunk... file size {len(file_chunk)}")
   
         seeder_soc.close()
 
