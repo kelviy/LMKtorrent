@@ -9,8 +9,9 @@ import json
 def main():
     ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
     port_tracker = int(port_tracker)
+    tracker_addr = (ip_tracker, port_tracker)
 
-    local_tracker = Tracker((ip_tracker, port_tracker))
+    local_tracker = Tracker(tracker_addr)
     local_tracker.start_main_loop()
 
 class Tracker():

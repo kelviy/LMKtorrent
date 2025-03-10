@@ -8,6 +8,8 @@ import hashlib
 import os
 import json
 
+from tracker import Tracker
+
 def main():
     """
     - IP Address: 127.0.0.1 (loop back interface) & Port: 12500
@@ -24,7 +26,11 @@ def main():
 
     # #Write the file name and its size to a textfile file_list.txt in ./data/
 
-    local_leacher = Leacher()
+    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
+    port_tracker = int(port_tracker)
+    tracker_addr = (ip_tracker, port_tracker)
+
+    local_leacher = Leacher(tracker_addr)
 
     print(f"Files Available : ")
     file_list_temp = list(local_leacher.file_list.keys())
@@ -40,8 +46,8 @@ def main():
 
 
 class Leacher:
-    def __init__(self):
-        self.tracker_address = ("127.0.0.1", 12500)
+    def __init__(self, tracker_addr):
+        self.tracker_address = tracker_addr
         self.seeder_list = self.get_seeder_list()  #stores a seeder_list
         self.file_list = self.get_file_list()    #stores a dictionery of file_list
 
