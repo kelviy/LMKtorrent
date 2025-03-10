@@ -17,10 +17,15 @@ def main():
 
     # specify folder to make available to leechers
     # folder_path = input("Enter folder path (absolute path or relative to running scripts):")
-    port = eval(input("Enter port (default 12501):"))
-    folder_path = "./data/" #default folder path for nowa
-    seeder_address = ('127.0.0.1', port)
-    tracker_address = ('127.0.0.1', 12500)
+    ip_seeder, port_seeder = (input("Enter Seeder ip and port number seperated by spaces (eg 123.123.31 12501):")).split(" ")
+    port_seeder = int(port_seeder)
+    
+    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
+    port_tracker = int(port_tracker)
+
+    folder_path = "./data/" #default folder path for now
+    seeder_address = (ip_seeder, port_seeder)
+    tracker_address = (ip_tracker, port_tracker)
 
     local_seeder = Seeder(seeder_address, tracker_address, folder_path)
     local_seeder.start_main_loop()

@@ -7,13 +7,15 @@ from packet import Request
 import json
 
 def main():
-    local_tracker = Tracker()
+    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
+    port_tracker = int(port_tracker)
+
+    local_tracker = Tracker((ip_tracker, port_tracker))
     local_tracker.start_main_loop()
 
-
 class Tracker():
-    def __init__(self):
-        self.address = ("127.0.0.1", 12500)
+    def __init__(self, tracker_addr):
+        self.address = tracker_addr
         self.udp_server_socket = socket(AF_INET, SOCK_DGRAM)
         self.udp_server_socket.bind(self.address)
 
