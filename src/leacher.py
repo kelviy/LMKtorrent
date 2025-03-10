@@ -102,8 +102,8 @@ class Leacher:
             with ThreadPoolExecutor(max_workers=self.max_parallel_seeders) as thread_pool:
                 futures = []
 
-                for seeder in list_seeder_con:
-                    futures.append(thread_pool.submit(Leacher.get_file_part, file_name, seeder[0], seeder[1], seeder[2] ,file_parts))
+                for i in range(len(list_seeder_con)):
+                    futures.append(thread_pool.submit(Leacher.get_file_part, file_name, file_chunk_info_list[i][0], file_chunk_info_list[i][1], list_seeder_con[i] ,file_parts))
 
                 for future in futures:
                     future.result()
@@ -226,13 +226,14 @@ class Leacher:
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:
+                print(f"{index}: Received {len(file_chunk)}")
                 print("hashes are equal")
-                seeder_soc.send(Request.ACK.encode())
                 file_parts[num_chunks_to_skip + index] = file_chunk
                 index += 1
+                seeder_soc.sendall(Request.ACK.encode())
             else:
-                seeder_soc.send(Request.ERROR.encode())
-                print("File failed. Not saving chunk")
+                seeder_soc.sendall(Request.ERROR.encode())
+                print(f"{index}: File failed. Not saving chunk")
   
         seeder_soc.close()
 

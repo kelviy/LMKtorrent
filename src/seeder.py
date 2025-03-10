@@ -17,8 +17,9 @@ def main():
 
     # specify folder to make available to leechers
     # folder_path = input("Enter folder path (absolute path or relative to running scripts):")
+    port = eval(input("Enter port (default 12501):"))
     folder_path = "./data/" #default folder path for nowa
-    seeder_address = ('127.0.0.1', 12501)
+    seeder_address = ('127.0.0.1', port)
     tracker_address = ('127.0.0.1', 12500)
 
     local_seeder = Seeder(seeder_address, tracker_address, folder_path)
@@ -108,35 +109,42 @@ class Seeder():
         3. Leacher confirms that file data integrity is kept by computing it's own hash of the file data and checking if the hash sent equals the hash computed
         4. Leacher sends back confirmation for the seeder to send the next file chunk
         """
-        file_name, num_chunks, send_after = file_req_info
-        file_chunk_list = []
+        try:
+            file_name, num_chunks, send_after = file_req_info
+            file_chunk_list = []
 
-        #reads section of file requested into memory
-        start_file_position = send_after
-        with open(f'data/{file_name}', mode='rb') as file:
-            file.seek(start_file_position)
-            for _ in range(num_chunks):
-                file_part = file.read(File.chunk_size)
-                file_chunk_list.append(file_part)
+            #reads section of file requested into memory
+            start_file_position = send_after
+            with open(f'data/{file_name}', mode='rb') as file:
+                file.seek(start_file_position)
+                for _ in range(num_chunks):
+                    file_part = file.read(File.chunk_size)
+                    file_chunk_list.append(file_part)
 
-        index = 0
-        while index < len(file_chunk_list):
-            hash = hashlib.sha256(file_chunk_list[index]).digest()
-            leecher_socket.sendall(hash)
-            leecher_socket.sendall(file_chunk_list[index])
+            index = 0
+            while index < num_chunks:
+                hash = hashlib.sha256(file_chunk_list[index]).digest()
+                leecher_socket.sendall(hash)
+                leecher_socket.sendall(file_chunk_list[index])
 
-            print(f"Sent {File.chunk_size} bytes. Hash computed: {hash}")
+                print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed: {hash}")
 
-            response = leecher_socket.recv(2048).decode()
-            if response == Request.ACK:
-                index += 1
-            else:
-                print("File Acknowledgement Failed... Resending")
+                response = leecher_socket.recv(2048).decode()
+                if response == Request.ACK:
+                    index += 1
+                elif response == Request.ERROR:
+                    print("File Acknowledgement Failed... Resending")
+                else:
+                    print("Unknown Response:", response)
 
-        print("Completed Sending File Chunk")
+            print("Completed Sending File Chunk")
 
-        with self.state_lock:
-            self.state = Seeder.AVAILBLE_FOR_CONNECTION
+            with self.state_lock:
+                self.state = Seeder.AVAILBLE_FOR_CONNECTION
+        except Exception:
+            print("Exception in send file_thread. File is not sent correctly?")
+            with self.state_lock:
+                self.state = Seeder.AVAILBLE_FOR_CONNECTION
 
 
     def ping_tracker(self):

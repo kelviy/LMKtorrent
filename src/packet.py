@@ -7,7 +7,7 @@ import math
 class File():
     """Stores file information"""
 
-    chunk_size = 5000
+    chunk_size = 5 * 1000
 
     @staticmethod
     def get_file_send_rule(file_size, seeder_list):
@@ -82,9 +82,11 @@ class Request():
 
     # ensuring all data in tcp is received
     @staticmethod
-    def recvall(socket: socket, chunk_size, message_size):
-        total_bytes_received = 0
+    def recvall(socket: socket, message_size, chunk_size=File.chunk_size):
+        total_bytes_received = bytes()
 
-        while total_bytes_received < message_size:
-            current_bytes_received = socket.recv(min(message_size-total_bytes_received, chunk_size))
-            total_bytes_received += len(current_bytes_received)
+        while len(total_bytes_received) < message_size:
+            current_bytes_received = socket.recv(min(message_size-len(total_bytes_received), chunk_size))
+            total_bytes_received += current_bytes_received
+
+        return total_bytes_received
