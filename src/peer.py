@@ -1,122 +1,280 @@
-#Mark Du Preez
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
-from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
-from tkinter import Tk
-from packet import Request, File
-from datetime import timedelta, datetime
-import os
-import ast
 from concurrent.futures import ThreadPoolExecutor
+from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
+from datetime import timedelta, datetime
+import sys
 import threading
-from tkinter import Canvas, PhotoImage, Tk, Canvas, Entry, Text, Button, PhotoImage
-import gui
+import hashlib
+import json
+import os
+import time
+from packet import Request, File
 
 def main():
+    # current_dir = os.getcwd()
+    # parent_dir = os.path.dirname(current_dir)
+    # file_path = os.path.join(parent_dir, 'data', 'file_list.txt')
+
+    # specify folder to make available to leechers
+    # folder_path = input("Enter folder path (absolute path or relative to running scripts):")
     
-    ip_address = input("Enter IP address: ")
-    port_num = int(input("Enter port number: "))
-
-    peer_address = (ip_address, port_num)
-    tracker_address = ("127.0.0.1", 12500)
-
-    seeder = Peer(peer_address, tracker_address)
+  #  ip_peer, port_peer = (input("Enter Peer ip and port number seperated by spaces (eg 123.123.31 12501):")).split(" ")
+ #   port_peer = int(port_peer)
     
-    connected = seeder.add_seeder()
+   # ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
+  #  port_tracker = int(port_tracker)
 
-    if connected:
-        seeder.start_main_loop()
-    else:
-        print("Oof!")
+    folder_path = "./data/" #default folder path for now
+    peer_address = ("127.0.0.1",12509)#(ip_peer, port_peer)
+    tracker_address = ("127.0.0.1",12500)#(ip_tracker, port_tracker)
 
 
+    peer = Peer(peer_address, tracker_address, folder_path)
+    peer.start_main_loop()
 
 class Peer():
+    # two states that a seeder can be in
+    AVAILBLE_FOR_CONNECTION = 'available'
+    CONNECTED = 'connected'
+    AWAY = 'away'
 
-    request_interval = timedelta(minutes=5)
+    ping_interval = timedelta(seconds=5)
 
-    def __init__(self,seeder_addr,tracker_addr):
-        self.seeder_addr = seeder_addr
-        self.tracker_addr = tracker_addr
-        self.udp_client_socket = socket(AF_INET, SOCK_DGRAM) #talking to server
-        self.udp_client_socket.bind(self.seeder_addr)
-        self.seeder_server_socket = socket(AF_INET,SOCK_STREAM)# establishing server socket for connecting with Peer
-        self.seeder_server_socket.bind(self.seeder_addr)
+    def __init__(self, address, tracker_address , folder_path):
+        self.state = Peer.AWAY
+        self.state_lock = threading.Lock()
         self.last_check_in = datetime.now()
-        self.numConSockets = 0
 
-        current_dir = os.getcwd()
-        parent_dir = os.path.dirname(current_dir)
-        file_path = os.path.join(parent_dir, 'data', 'file_list.txt')
-        print(file_path)
-        with open(file_path, mode='r') as file:
-            self.file_list = file.read()#gets seeder file list
+        self.address = address
+        self.tracker_address = tracker_address
+
+        self.folder_path = folder_path
+        self.file_list_upload = {} 
+        self.agreedToSeed = []
+
+
+       
         
+
+        #self.address = (None,) #random generated at the moment
+        self.max_parallel_seeders = 2 #idk if i can use this for max number of conSockets 
+        self.max_conSockets = 2
+
+
+
+        
+        if len(sys.argv) > 1:
+            file_names = os.listdir(folder_path)
+            for name in file_names:
+                file_size = os.path.getsize(self.folder_path + name)
+                self.file_list_upload[name] = file_size
+                self.agreedToSeed.append(name)
+
+            print("File Dict:", self.file_list_upload)
+            self.add_to_tracker()
+            self.upload_file_info()
+            print("seeding")
+        else:
+            print("not seeding")
+        
+        #file_list moved here for a chance for a seeder to upload there stuff
+        self.seeder_list = self.get_seeder_list()  #stores a seeder_list
+        self.file_list_download = self.get_file_list()    #stores a dictionery of file_list. #!this needs to be different from the files we can seed and files we can download
+
+        self.tcp_server_socket = socket(AF_INET, SOCK_STREAM)
+        self.tcp_server_socket.bind(self.address)
+        self.tcp_server_socket.listen(5)
+
+        if len(sys.argv) > 1:# so Client doesnt ping if it isnt seeding
+            # seperate thread to ping tracker
+            ping_thread = threading.Thread(target=self.ping_tracker)
+            ping_thread.start()
+        else:
+            print(f"Client wont be pinging till it seeds: {self.address} ")
+        
+
+
     def start_main_loop(self):
-        self.seeder_server_socket.listen(10)
-       # window = Tk()
-      #  app = gui.MyWindow(window)
-       # window.mainloop()
+        self.state = Peer.AVAILBLE_FOR_CONNECTION
+        numConSockets =0
         while True:
+
+
+            if numConSockets < self.max_conSockets and len(self.agreedToSeed) >0:
+                threading.Thread(target=self.upload).start()
+                numConSockets += 1
+
+            # remeber need to upload leachers filelist and add to be pinged if they agree to being a seeder for a file
+            new_seeder,new_file_name  = self.download()
+            if new_seeder:
+                self.add_to_tracker()
+                self.upload_file_info()
+                print(f"{self.address} is now able to seed {new_file_name}")
+
+
             
-            download = input("Do you want to download a file? (y/n)\n")
-            if download == "y":
-#if app.get_bool == True:
-              t1 =  threading.Thread(target=self.download).start()
-             # app.reset_bool()
-            if self.numConSockets <1:# make sure we dont create infinite conSockets waiting for leachers
-                threading.Thread(target=self.await_leach).start()
-                self.numConSockets += 1
-            else: 
-                print("Too many conSocket threads")
             
 
-    def add_seeder(self):
-        request = (Request.ADD_SEEDER + '\n' + self.file_list).encode()
-        self.udp_client_socket.sendto(request, self.tracker_addr)
 
-        answer, tracker_address  = self.udp_client_socket.recvfrom(1024)
+    def send_file_part(self, leecher_socket: socket, file_req_info):
+        """
+        Sends file data requested 
+        1. Computes the file chunk hash and sends it to the Peer
+        2. Sends the file data
+        3. Peer confirms that file data integrity is kept by computing it's own hash of the file data and checking if the hash sent equals the hash computed
+        4. Peer sends back confirmation for the seeder to send the next file chunk
+        """
+        try:
+            file_name, num_chunks, send_after = file_req_info
+            file_chunk_list = []
+
+            #reads section of file requested into memory
+            start_file_position = send_after
+            with open(f'data/{file_name}', mode='rb') as file:
+                file.seek(start_file_position)
+                for _ in range(num_chunks):
+                    file_part = file.read(File.chunk_size)
+                    file_chunk_list.append(file_part)
+
+            index = 0
+            while index < num_chunks:
+                hash = hashlib.sha256(file_chunk_list[index]).digest()
+                leecher_socket.sendall(hash)
+                leecher_socket.sendall(file_chunk_list[index])
+
+                print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}")
+
+                response = leecher_socket.recv(15).decode()
+                if response == Request.ACK:
+                    index += 1
+                elif response == Request.NOT_ACK:
+                    print("File Acknowledgement Failed... Resending")
+                else:
+                    print("Unknown Response:", response)
+
+            print("Completed Sending File Chunk")
+
+            with self.state_lock:
+                self.state = Peer.AVAILBLE_FOR_CONNECTION
+        except Exception as e:
+            print(f"Exception in send file_thread. File is not sent correctly?\n{e}")
+            with self.state_lock:
+                self.state = Peer.AVAILBLE_FOR_CONNECTION
+
+
+    def ping_tracker(self):
+        while(True):
+            # sends a ping with tcp details
+            tracker_socket = socket(AF_INET, SOCK_DGRAM)
+            message = Request.PING_TRACKER + "\n" + json.dumps(self.address)
+            tracker_socket.sendto(message.encode(), self.tracker_address)
+            response, addr = tracker_socket.recvfrom(1024)
+            print("Ping Result:", response.decode())
+            tracker_socket.close()
+
+            duration = datetime.now()-self.last_check_in
+            self.last_check_in = datetime.now()
+            time.sleep( max(0, (Peer.ping_interval - (duration) ).total_seconds()) )
+
+    def add_to_tracker(self):
+        message = Request.ADD_SEEDER+ "\n" + json.dumps(self.address)
         
-        if answer.decode() == Request.CON_EST:
-            return True
-        else:
-            return False
+        tracker_socket = socket(AF_INET, SOCK_DGRAM)
+        tracker_socket.sendto(message.encode(), self.tracker_address)
+        response, addr = tracker_socket.recvfrom(1024)
+        print("Add to Tracker Result:", response.decode())
+        tracker_socket.close()
+
+
+    def upload_file_info(self):
+        message = Request.UPLOAD_FILE_LIST + "\n" + json.dumps(self.file_list_upload)
+        tracker_socket = socket(AF_INET, SOCK_DGRAM)
+        tracker_socket.sendto(message.encode(), self.tracker_address)
+        response, addr = tracker_socket.recvfrom(1024)
+        print("Upload to Tracker Result:", response.decode())
+        tracker_socket.close()
         
-    def notify_tracker(self):
-        request = Request.NOTIFY_TRACKER.encode()
-        self.udp_client_socket.sendto(request,self.tracker_addr)
-        self.last_check_in = datetime.now()
-    
-    def send_file(self, connection_socket):
-        request = connection_socket.recv(1024)
 
-        request = request.decode()
-        request = request.splitlines()
+    #Start of Leacher methods
+    def get_seeder_list(self):
+        message = Request.REQUEST_SEEDER_LIST
+        tracker_socket = socket(AF_INET, SOCK_DGRAM)
+        tracker_socket.sendto(message.encode(), self.tracker_address)
+        list, addr = tracker_socket.recvfrom(1024)
+        seeder_list = json.loads(list.decode())
+        print("Obtained Seeder List:", seeder_list)
+        tracker_socket.close()
+        return seeder_list
 
-        request[0] = request[0].split(" ")
-        request[1] = request[1].split(" ")
-        request[1][0] = int(request[1][0])
-        request[1][1] = int(request[1][1])
 
-        if request[0][0] == Request.GET_FILE_PART:
-            with open(os.path.join(os.path.dirname(os.getcwd()), 'data', request[0][1]), mode = 'rb') as file:
-                file.read(request[1][1])
+    def get_file_list(self):
+        message = Request.REQUEST_FILE_LIST
+        tracker_socket = socket(AF_INET, SOCK_DGRAM)
+        tracker_socket.sendto(message.encode(), self.tracker_address)
+        list, addr = tracker_socket.recvfrom(1024)
+        file_list = json.loads(list.decode())
+        print("Obtained File List:", file_list)
+        tracker_socket.close()
+        return file_list
 
-                for i in range(request[1][0]):
-                    connection_socket.send(file.read(File.chunk_size))
+    def request_file(self, file_name):
+        list_seeder_con = []
 
-            Peer_addr = connection_socket.getpeername()
+        # sends request to all potential seeders
+        for ip, port in self.seeder_list:
+            soc = socket(AF_INET, SOCK_STREAM)
+            soc.connect((ip, port))
 
-            print("File parts sent to " + str(Peer_addr))  
+            soc.sendall(Request.REQUEST_CONNECTION.encode())
+            response = soc.recv(1024).decode()
+
+            if response == Request.CONNECTED:
+                list_seeder_con.append(soc)
+
+        # exits over the limit seeders
+        if len(list_seeder_con) > self.max_parallel_seeders:
+            for i in range(len(list_seeder_con) - self.max_parallel_seeders):
+                soc = list_seeder_con.pop()
+                soc.sendall(Request.EXIT)
+
+        #calculate file chunk info
+        file_size = self.file_list_download[file_name]
+        file_chunk_info_list = File.get_file_send_rule(file_size, list_seeder_con)
+
+        num_chunks = file_chunk_info_list[0][0]
+        file_chunk_info_list = file_chunk_info_list[1:]
+        file_parts = [None]*num_chunks
+
+        if len(list_seeder_con) > 1:
+            with ThreadPoolExecutor(max_workers=self.max_parallel_seeders) as thread_pool:
+                futures = []
+
+                for i in range(len(list_seeder_con)):
+                    futures.append(thread_pool.submit(Peer.get_file_part, file_name, file_chunk_info_list[i][0], file_chunk_info_list[i][1], list_seeder_con[i] ,file_parts))
+
+                for future in futures:
+                    future.result()
 
         else:
-            print("Unknown request: " + request[0][0])
+            Peer.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
 
-        connection_socket.close()    
-    #Peer methods from here on
-    def get_file_part(file_name, num_chunks, send_after, seeder_addr, file_parts):
-        request = Request.GET_FILE_PART + " " + file_name + "\n" + str(num_chunks) + " " + str(send_after)
+        os.makedirs("tmp", exist_ok=True)
+        file_path = os.path.join("tmp", file_name)
+
+        with open(file_path, mode='wb') as file:
+            for part in file_parts:
+                file.write(part)
+
+        print(file_name + " downloaded succesfully!")
+
+
+      
+            
+    #TODO: fix parallel download and sending
+    def get_file_part(file_name, num_chunks, send_after, seeder_soc, file_parts):
+        request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
         request = request.encode()
 
         #send_after/File.chunk_size will be a whole number.
@@ -124,100 +282,94 @@ class Peer():
         print(type(send_after))
         num_chunks_to_skip = send_after//File.chunk_size
 
-        client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect(seeder_addr)
+        seeder_soc.send(request)
 
-        client_socket.send(request)
+        index = 0
+        while index < num_chunks:
+            # recieve hash and file
+            received_hash = seeder_soc.recv(32)
+            file_chunk = seeder_soc.recv(File.chunk_size)
 
-        for i in range(num_chunks):
-            file_parts[num_chunks_to_skip + i] = client_socket.recv(File.chunk_size)
+            # computer and equate hashes
+            file_hash = hashlib.sha256(file_chunk).digest()
 
-        client_socket.close()
-
-
-    def request_file(self, file_name):
-        
-        request = (Request.REQUEST_FILE + " " + file_name).encode()
-        
-        self.udp_client_socket.sendto(request, self.tracker_addr)
-
-        response, tracker_address = self.udp_client_socket.recvfrom(5120)
-     #   self.udp_client_socket.close() #dunno why we closing
-
-        response = response.decode()
-
-        print(response)
-
-        response = response.splitlines()
-
-        request_response = response.pop(0)
-
-        if (request_response == Request.FILE_FOUND):
-            chunking_info = response.pop(0).split(" ")
-            chunking_info = [int(x) for x in chunking_info]
-
-            file_parts = [None]*chunking_info[0]
-
-            for i in range(len(response)):
-                line = response[i]
-                response[i] = []
-                response[i].append(int(line[0:line.find(" ")]))
-                line = line[line.find(" ")+1:]
-                #print(response[i][0])
-                response[i].append(int(line[0:line.find(" ")]))
-                line = line[line.find(" ") + 1:]
-                #print(response[i][1])
-
-                response[i].append(ast.literal_eval(line))
-
-
-            if len(response) > 1:
-                downloaders = []
-
-                with ThreadPoolExecutor(max_workers=8) as thread_pool:##
-                    futures = []
-
-                    for seeder in response:
-                        futures.append(thread_pool.submit(Peer.get_file_part, file_name, seeder[0], seeder[1], seeder[2] ,file_parts))
-
-                    for future in futures:
-                        future.result()#join for thread
-
+            if file_hash == received_hash:
+                print(f"{index}: Received {len(file_chunk)}")
+                print("hashes are equal")
+                file_parts[num_chunks_to_skip + index] = file_chunk
+                index += 1
+                seeder_soc.sendall(Request.ACK.encode())
             else:
-                print(type(response[0][1]))
-                Peer.get_file_part(file_name, int(response[0][0]), int(response[0][1]),response[0][2],file_parts)
+                seeder_soc.sendall(Request.NOT_ACK.encode())
+                print(f"{index}: File failed. Not saving chunk... file size {len(file_chunk)}")
+  
+        seeder_soc.close()
 
-            os.makedirs("tmp", exist_ok=True)
-            file_path = os.path.join("tmp", file_name)
+    #Liam's Methods
+    def download(self):
+        print(f"Files Available : ")
+        file_list_temp = list(self.file_list_download.keys())
+        for index, file_name in enumerate(file_list_temp):
+            print(f"{index}: {file_name} for size {self.file_list_download[file_name]}")
 
-            with open(file_path, mode='wb') as file:
-                for part in file_parts:
-                    file.write(part)
-
-            print(file_name + " downloaded succesfully!")
-            
-            
-            #Don't forget to write file names and sizes to text file
-        else:
-            print("File not found!")
-    
-    def download(self):# might not even need this method could add directly into loop however does keep loop less cluttered
-        print("choose file to download")
-        print("1. video.zip")#make dynamic later
-        num = input("Enter file number: ")
-        self.request_file("video.zip")#will code dynamically later
-        self.add_seeder()
-       # return "video1.zip"#will code dynamically later
-    
-    def await_leach(self):
-        connection_socket, Peer_addr = self.seeder_server_socket.accept()
-
-        self.send_file(connection_socket)
-
-        if (datetime.now()-self.last_check_in) >= self.request_interval:
-            self.notify_tracker()
-        self.numConSockets -= 1
+        usr_ans = input("\nEnter desired file number seperated by spaces:\n")
         
+        download_files_req = usr_ans.split(" ")
+
+        for file_no in download_files_req:
+            self.request_file(file_list_temp[int(file_no)]) 
+        file_name =file_list_temp[int(usr_ans)]
+        usr_ans = input(f"Would you like to seed {file_name} (y/n)")
+        if usr_ans == "y":
+
+            file_names = os.listdir(self.folder_path)#! leacher needs to download file into data 
+            file_size = os.path.getsize(self.folder_path + file_name)
+            self.file_list_upload[file_name] = file_size
+
+
+
+
+            self.agreedToSeed.append(file_name)
+            print(f"Seeding {file_name}")
+            return True,file_name
+        else:
+            print(f"Not seeding {file_name}")
+
+    
+    def upload(self):
+            client_socket, client_addr = self.tcp_server_socket.accept()
+            # request information will be delimited by "\n"
+            request = client_socket.recv(2048).decode().splitlines()
+
+
+            match request[0]:
+                case Request.REQUEST_CONNECTION:
+                    # returns connected or queue back to leecher. 
+                    # connected means that the server will proceed to transfer the file
+                    # queue means that the leecher is in the queue for their request
+                    with self.state_lock:
+                        if self.state == Peer.AVAILBLE_FOR_CONNECTION:
+                            # encoded json string of a list containing file request info
+                            # file_name, chunk start, chunk end, chunk size
+                            self.state = Peer.CONNECTED
+                            client_socket.sendall(Request.CONNECTED.encode())
+                            response = client_socket.recv(2048).decode().splitlines()
+                            if response[0] == Request.REQUEST_FILE_CHUNK:
+                                # creates a new thread to send the file_part
+                                # files info list format:
+                                #  [file_name, num_chunks, send_after]
+                                file_request_info = json.loads(response[1])
+                                client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
+                                client_thread.start()
+                            else:
+                                # close if client did not acknowledge
+                                print("Client did not request file chunk. Closing socket")
+                                self.state = Peer.AVAILBLE_FOR_CONNECTION
+                                client_socket.close()
+                        else:
+                            # close if not available
+                            client_socket.sendall(Request.AWAY.encode())
+                            client_socket.close()
 
 
 if __name__ == "__main__":

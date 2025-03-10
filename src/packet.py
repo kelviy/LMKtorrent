@@ -1,16 +1,17 @@
-#Mark Du Preez
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
+
+from socket import socket
 import math
-from datetime import timedelta
 
 class File():
     """Stores file information"""
 
-    chunk_size = 5000
+    chunk_size = 5 * 1000
 
     @staticmethod
     def get_file_send_rule(file_size, seeder_list):
+        # Used in seeder exec send (gets the )
         num_chunks = math.ceil(file_size/File.chunk_size)
         num_chunks_per_seeder = num_chunks//len(seeder_list)
         add_chunks = num_chunks % len(seeder_list)
@@ -32,43 +33,64 @@ class File():
         return file_send_rule
 
 class Request():
-    #Sent by seeder to tracker with their file list below it in the format of:
-    #   add_seeder
-    #   <filename1> <size1>
-    #   <filename2> <size2>
+    # Information is sent in a string delimited by \n
+
+    ## TRACKER
+    #Sent by seeder to register with the tracker. (Tracker stores seeder info)
+    # Format: <type> \n (tcp_address)
     ADD_SEEDER = "add_seeder"
-
+    # Sent by seeder to update ping time of seeder
+    # Format: <type> \n (tcp_address) 
+    PING_TRACKER = "ping_tracker"
+    # Sent by leecher to request seeder_list
+    REQUEST_SEEDER_LIST = 'request_seeder_list'
+    # Sent by the seeder to upload a file info list (Changes files info)
+    UPLOAD_FILE_LIST = 'upload_file_list'
+    # Sent by leecher to request file list
+    REQUEST_FILE_LIST = 'request_file_list'
     #Approximately every 5 minutes, the seeder will send the tracker a notify_tracker message to indicate that they are still active.
-    NOTIFY_TRACKER = "notify_tracker"
+    # (not used at the moment) Sent from (1)tracker -> seeder / (2)leacher -> tracker that TCP server is ready to receive
+    TCP_PERMIT = "tcp_permit"
 
-    #Sent from tracker to seeder when a successfulc connection has been established.
-    #Essentially, when the seeder's file list is recieved.
-    CON_EST = "con_est"
+    ## SEEDER
+    #Sent from seeder to leecher when a successful connection has been established.
+    CONNECTED = "connected"
+    # Sent from seeder to leecher to indicate that it cannot connect at the moment
+    AWAY = 'away'
+    # (not used at the moment) Sent from seeder to leacher to inform that the seeder has put the leecher in a queue
+    QUEUE = 'queue'
 
+    ## LEECHER
+    #Used by leacher to ask for connection to seeder
+    REQUEST_CONNECTION = "request_connection"
+    #Used to ask seeder for a specific file chunk that they have.
     #Typically will say:
-    #   "request_file video12.zip"
-    #Used to ask seeder for a specific file that they have.
-    #Built-in checking for if seeder has the file.
-    REQUEST_FILE = "request_file"
+    #   "request_file_chunk \n [file_name, num_chunks, send_after]"
+    REQUEST_FILE_CHUNK = "send_file_chunk"
+    # Sent by leecher to seeder to ask to ask to leave queue or leave connection
+    EXIT = "exit"
 
-    SEND_FILE = "send_file"
+     # request execution encounted errors
+    # Has the format:
+    #   "error <error message>"
+    # - error message can be that the file hasn't been found
+    ERROR = "error"
+    # request completed without any problems
+    SUCCESS = "success"
+    # acknowledgement that file received successfully
+    ACK = "acknolwedgement"
+    # not ack
+    NOT_ACK = "error_notacknol"
 
-    FILE_NOT_FOUND = "file_not_found"
-
-    FILE_FOUND = "file_found"
-
-    GET_FILE_PART = "get_file_part"
-
-class SeederPeer():
-    expire_duration = timedelta(minutes=10)
-    
-    def __init__(self, address):
-        self.address = address
-        self.file_list = []
-
-    def add_file(self, file_name):
-        self.file_list.append(file_name)
-
-    def __eq__(self, other):
-        return (self.address[0] == other.address[0]) and (self.address[1] == other.address[1])
-
+    # ensuring all data in tcp is received
+    @staticmethod
+    def myrecvall(soc: socket, message_size, chunk_size=File.chunk_size):
+        chunks = []
+        bytes_recd = 0
+        while bytes_recd < message_size:
+            chunk = soc.recv(min(message_size - bytes_recd, 2048))
+            if chunk == b'':
+                raise RuntimeError("socket connection broken")
+            chunks.append(chunk)
+            bytes_recd = bytes_recd + len(chunk)
+        return b''.join(chunks)
