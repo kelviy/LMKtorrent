@@ -137,7 +137,7 @@ class Seeder():
                 response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:
                     index += 1
-                elif response == Request.ERROR:
+                elif response == Request.NOT_ACK:
                     print("File Acknowledgement Failed... Resending")
                 else:
                     print("Unknown Response:", response)
