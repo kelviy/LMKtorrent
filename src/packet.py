@@ -79,6 +79,8 @@ class Request():
     SUCCESS = "success"
     # acknowledgement that file received successfully
     ACK = "acknolwedgement"
+    # not ack
+    NOT_ACK = "error_notacknol"
 
     # ensuring all data in tcp is received
     @staticmethod

@@ -238,7 +238,7 @@ class Leacher:
                 index += 1
                 seeder_soc.sendall(Request.ACK.encode())
             else:
-                seeder_soc.sendall(Request.ERROR.encode())
+                seeder_soc.sendall(Request.NOT_ACK.encode())
                 print(f"{index}: File failed. Not saving chunk")
   
         seeder_soc.close()

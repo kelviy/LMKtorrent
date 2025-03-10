@@ -134,7 +134,7 @@ class Seeder():
 
                 print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed: {hash}")
 
-                response = leecher_socket.recv(2048).decode()
+                response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:
                     index += 1
                 elif response == Request.ERROR:
