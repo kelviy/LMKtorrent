@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import os
 import json
+import struct
 
 from tracker import Tracker
 
@@ -217,18 +218,19 @@ class Leacher:
 
         #send_after/File.chunk_size will be a whole number.
         #As send_after = File.chunk_size*num_chunks
-        print(type(send_after))
         num_chunks_to_skip = send_after//File.chunk_size
 
-        seeder_soc.send(request)
+        seeder_soc.sendall(request)
 
         index = 0
         while index < num_chunks:
             # recieve hash and file
-            received_hash = seeder_soc.recv(32)
-            file_chunk = seeder_soc.recv(File.chunk_size)
+            
+            received_header = seeder_soc.recv(struct.calcsize("i32s"))
+            file_chunk_size, received_hash = struct.unpack("i32s", received_header)
+            file_chunk = Request.myrecvall(seeder_soc, file_chunk_size, File.chunk_size)
 
-            # computer and equate hashes
+            # computer and equate hashe
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:

@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import time
+import struct
 from packet import Request, File
 
 def main():
@@ -36,7 +37,7 @@ class Seeder():
     CONNECTED = 'connected'
     AWAY = 'away'
 
-    ping_interval = timedelta(seconds=5)
+    ping_interval = timedelta(minutes=2)
 
     def __init__(self, address, tracker_address , folder_path):
         self.state = Seeder.AWAY
@@ -128,8 +129,10 @@ class Seeder():
 
             index = 0
             while index < num_chunks:
+                chunk_size = len(file_chunk_list[index])
                 hash = hashlib.sha256(file_chunk_list[index]).digest()
-                leecher_socket.sendall(hash)
+                header = struct.pack("i32s", chunk_size, hash)
+                leecher_socket.sendall(header)
                 leecher_socket.sendall(file_chunk_list[index])
 
                 print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}")
