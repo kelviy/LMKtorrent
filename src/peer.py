@@ -260,8 +260,8 @@ class Peer():
         else:
             Peer.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
 
-        os.makedirs("tmp", exist_ok=True)
-        file_path = os.path.join("tmp", file_name)
+        os.makedirs("data", exist_ok=True)
+        file_path = os.path.join("data", file_name)
 
         with open(file_path, mode='wb') as file:
             for part in file_parts:
