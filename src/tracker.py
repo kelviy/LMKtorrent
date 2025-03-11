@@ -7,7 +7,7 @@ from packet import Request
 import json
 
 def main():
-    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
+    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
     port_tracker = int(port_tracker)
     tracker_addr = (ip_tracker, port_tracker)
 
