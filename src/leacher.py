@@ -15,17 +15,6 @@ def main():
     """
     - IP Address: 127.0.0.1 (loop back interface) & Port: 12500
     """
-    #Mark's Code
-    # leacher_ip_address = input("Enter IP address: ")
-    # leacher_port_num = int(input("Enter port number: "))
-    # file_name = input("Enter the name of the file that you want to download: ")
-    # leacher_addr = (leacher_ip_address,leacher_port_num)
-    # tracker_addr = ("127.0.0.1",12500)
-
-    # leacher = Leacher(leacher_addr, tracker_addr)
-    # leacher.request_file(file_name)
-
-    # #Write the file name and its size to a textfile file_list.txt in ./data/
 
     ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
     port_tracker = int(port_tracker)
@@ -33,14 +22,18 @@ def main():
 
     local_leacher = Leacher(tracker_addr)
 
-    print(f"Files Available : ")
+    print(f"Files Available Type 'a' for all files:")
     file_list_temp = list(local_leacher.file_list.keys())
     for index, file_name in enumerate(file_list_temp):
         print(f"{index}: {file_name} for size {local_leacher.file_list[file_name]}")
 
     usr_ans = input("\nEnter desired file number seperated by spaces:\n")
-    
-    download_files_req = usr_ans.split(" ")
+
+    download_files_req = []
+    if usr_ans.lower() == 'a':
+        download_files_req = range(0, len(file_list_temp))
+    else:
+        download_files_req = usr_ans.split(" ")
 
     for file_no in download_files_req:
         local_leacher.request_file(file_list_temp[int(file_no)]) 
@@ -131,91 +124,7 @@ class Leacher:
 
         print(file_name + " downloaded succesfully!")
 
-
-        # os.makedirs('./tmp', exist_ok=True)
-
-        # with open(f'tmp/{MetaData.file_name}', mode='wb') as file:
             
-        #     # flag = bool.from_bytes(soc.recv(1))
-        #     remainingBytes = MetaData.file_size
-        #     count = 0
-        #     # while flag:
-        #     while remainingBytes > 0:
-        #         file_part = soc.recv(MetaData.send_chunk_size)
-        #         print(f"{count}: {len(file_part)}")
-        #         count+= 1
-        #         file.write(file_part)
-        #         remainingBytes -= MetaData.send_chunk_size
-        #         # flag = bool.from_bytes(soc.recv(1))
-        #         # print(flag)
-        # print("Successfully downloaded file")
-        # soc.close()
-        # return True
-
-    # def request_file(self, file_name):
-        
-    #     request = (Request.REQUEST_FILE + " " + file_name).encode()
-        
-    #     self.udp_client_socket.sendto(request, self.tracker_addr)
-
-    #     response, tracker_address = self.udp_client_socket.recvfrom(5120)
-    #     self.udp_client_socket.close()
-
-    #     response = response.decode()
-
-    #     print(response)
-
-    #     response = response.splitlines()
-
-    #     request_response = response.pop(0)
-
-    #     if (request_response == Request.FILE_FOUND):
-    #         chunking_info = response.pop(0).split(" ")
-    #         chunking_info = [int(x) for x in chunking_info]
-
-    #         file_parts = [None]*chunking_info[0]
-
-    #         for i in range(len(response)):
-    #             line = response[i]
-    #             response[i] = []
-    #             response[i].append(int(line[0:line.find(" ")]))
-    #             line = line[line.find(" ")+1:]
-    #             #print(response[i][0])
-    #             response[i].append(int(line[0:line.find(" ")]))
-    #             line = line[line.find(" ") + 1:]
-    #             #print(response[i][1])
-
-    #             response[i].append(ast.literal_eval(line))
-
-
-    #         if len(response) > 1:
-    #             downloaders = []
-
-    #             for seeder in response:
-    #                 process = Thread(target=Leacher.get_file_part, args=(file_name,seeder[0],seeder[1],seeder[2],file_parts))
-    #                 downloaders.append(process)
-
-    #                 process.start()
-
-    #             for process in downloaders:
-    #                 process.join()
-    #         else:
-    #             print(type(response[0][1]))
-    #             Leacher.get_file_part(file_name, int(response[0][0]), int(response[0][1]),response[0][2],file_parts)
-
-    #         os.makedirs("tmp", exist_ok=True)
-    #         file_path = os.path.join("tmp", file_name)
-
-    #         with open(file_path, mode='wb') as file:
-    #             for part in file_parts:
-    #                 file.write(part)
-
-    #         print(file_name + " downloaded succesfully!")
-    #     else:
-    #         print("File not found!")
-
-            
-    #TODO: fix parallel download and sending
     def get_file_part(file_name, num_chunks, send_after, seeder_soc, file_parts):
         request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
         request = request.encode()

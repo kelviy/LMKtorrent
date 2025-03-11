@@ -12,19 +12,16 @@ import struct
 from packet import Request, File
 
 def main():
-    # current_dir = os.getcwd()
-    # parent_dir = os.path.dirname(current_dir)
-    # file_path = os.path.join(parent_dir, 'data', 'file_list.txt')
-
-    # specify folder to make available to leechers
+    # uncomment to specify folder to make available to leechers
     # folder_path = input("Enter folder path (absolute path or relative to running scripts):")
+    folder_path = "./data/" #default folder path for now
+    
     ip_seeder, port_seeder = (input("Enter Seeder ip and port number seperated by spaces (eg 123.123.31 12501):")).split(" ")
     port_seeder = int(port_seeder)
     
     ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
     port_tracker = int(port_tracker)
 
-    folder_path = "./data/" #default folder path for now
     seeder_address = (ip_seeder, port_seeder)
     tracker_address = (ip_tracker, port_tracker)
 
@@ -187,61 +184,6 @@ class Seeder():
         print("Upload to Tracker Result:", response.decode())
         tracker_socket.close()
         
-
-        # message = json.dumps(self.file_list).encode()
-        # message_size = len(message)
-
-        # header = struct.pack(Request.HEADER_FORMAT, Request.ADD_SEEDER.encode(), message_size)
-
-        # client_socket = socket(AF_INET, SOCK_DGRAM)
-        # client_socket.bind(("127.0.0.1", 12501))
-
-        # print(f"Sending Request to add this seeder to make with folder {self.folder_path} available")
-        # client_socket.sendto(header, self.tracker_address.get_con())
-
-        # response,_ = client_socket.recvfrom(1)
-        # status_message = struct.unpack(Request.STATUS_FORMAT, response)
-
-        # if status_message:
-        #     print("Successfully added seeder to client")
-        #     print("Uploading file list")
-            
-        #     data_addr = Address("127.0.0.1", 11000)
-        #     client_socket.sendto(message, data_addr.get_con())
-        # else:
-        #     print("Unsuccessful with adding seeder")
-
-
-        # ip, port = client_socket.getsockname()
-        # client_socket.close()
-        # return ip, port
-    
-    # def send_file(self, connection_socket):
-    #     request = connection_socket.recv(1024)
-
-    #     request = request.decode()
-    #     request = request.splitlines()
-
-    #     request[0] = request[0].split(" ")
-    #     request[1] = request[1].split(" ")
-    #     request[1][0] = int(request[1][0])
-    #     request[1][1] = int(request[1][1])
-
-    #     if request[0][0] == Request.GET_FILE_PART:
-    #         with open(os.path.join(os.path.dirname(os.getcwd()), 'data', request[0][1]), mode = 'rb') as file:
-    #             file.read(request[1][1])
-
-    #             for i in range(request[1][0]):
-    #                 connection_socket.send(file.read(File.chunk_size))
-
-    #         leacher_addr = connection_socket.getpeername()
-
-    #         print("File parts sent to " + str(leacher_addr))  
-
-    #     else:
-    #         print("Unknown request: " + request[0][0])
-
-    #     connection_socket.close()    
 
 if __name__ == "__main__":
     main()
