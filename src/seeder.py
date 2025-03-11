@@ -132,21 +132,23 @@ class Seeder():
                 leecher_socket.sendall(header)
                 leecher_socket.sendall(file_chunk_list[index])
 
-                print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}")
+                print(f"\r{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}", end="")
 
                 response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:
                     index += 1
                 elif response == Request.NOT_ACK:
-                    print("File Chunk Acknowledgement Failed... Resending")
+                    print("\rFile Chunk Acknowledgement Failed... Resending", end="")
                 else:
-                    print("Unknown Response:", response)
+                    print("\rUnknown Response:", response, end="")
 
-            print("Completed Sending File Chunk")
+            print()
+            print(f"Completed Sending File Chunk of {file_name}")
 
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
         except Exception as e:
+            print()
             print(f"Exception in send file_thread. File is not sent correctly?\n{e}")
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
