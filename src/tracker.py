@@ -86,16 +86,6 @@ class Tracker():
 
     def update_file_list(self, payload):
         self.file_list = json.loads(payload)
-
-        # for file_str in payload:
-        #     file_info = file_str.split(" ")
-            
-        #     #checks for unique files
-        #     if file_info[0] in self.file_list:
-        #         return "File names are not unique"
-        #     else:
-        #          self.file_list[file_info[0]] = file_info[1]
-        
         print("Successfully updated file list")
         return True 
 
