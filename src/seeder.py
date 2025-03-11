@@ -141,7 +141,7 @@ class Seeder():
                 if response == Request.ACK:
                     index += 1
                 elif response == Request.NOT_ACK:
-                    print("File Acknowledgement Failed... Resending")
+                    print("File Chunk Acknowledgement Failed... Resending")
                 else:
                     print("Unknown Response:", response)
 

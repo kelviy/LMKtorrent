@@ -63,6 +63,8 @@ class Leacher:
         list, addr = tracker_socket.recvfrom(1024)
         seeder_list = json.loads(list.decode())
         print("Obtained Seeder List:", seeder_list)
+        response, addr = tracker_socket.recvfrom(1024)
+        print("Seeder List Request Result:", response.decode())
         tracker_socket.close()
         return seeder_list
 
@@ -74,6 +76,8 @@ class Leacher:
         list, addr = tracker_socket.recvfrom(1024)
         file_list = json.loads(list.decode())
         print("Obtained File List:", file_list)
+        response, addr = tracker_socket.recvfrom(1024)
+        print("File List Request Result:", response.decode())
         tracker_socket.close()
         return file_list
 
