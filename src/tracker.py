@@ -112,6 +112,7 @@ class Tracker():
     def send_file_list(self, client_address):
         self.udp_server_socket.sendto(json.dumps(self.file_list).encode(), client_address)
         print("Sent File List to:", client_address)
+        return True
 
     def ping_tracker(self, client_addr_udp, client_addr_tcp):
         client_addr_tcp = json.loads(client_addr_tcp)

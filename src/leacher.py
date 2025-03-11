@@ -96,10 +96,10 @@ class Leacher:
 
         #calculate file chunk info
         file_size = self.file_list[file_name]
-        file_chunk_info_list = File.get_file_send_rule(file_size, list_seeder_con)
+        #get num_chunks for file total
+        # file_chunk_info_list returns a list containing file_chunk information to send to each seeder
+        num_chunks, file_chunk_info_list = File.get_file_send_rule(file_size, len(list_seeder_con))
 
-        num_chunks = file_chunk_info_list[0][0]
-        file_chunk_info_list = file_chunk_info_list[1:]
         file_parts = [None]*num_chunks
 
         if len(list_seeder_con) > 1:
@@ -143,7 +143,7 @@ class Leacher:
             file_chunk_size, received_hash = struct.unpack("i32s", received_header)
             file_chunk = Request.myrecvall(seeder_soc, file_chunk_size, File.chunk_size)
 
-            # computer and equate hashe
+            # computer and equate hashes
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:
