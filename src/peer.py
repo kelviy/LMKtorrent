@@ -4,6 +4,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from datetime import timedelta, datetime
+import struct
 import sys
 import threading
 import hashlib
@@ -31,17 +32,20 @@ def main():
     tracker_address = ("127.0.0.1",12500)#(ip_tracker, port_tracker)
 
 
-    peer = Peer(peer_address, tracker_address, folder_path)
+    peer = Peer(peer_address)#, tracker_address, folder_path)
     peer.start_main_loop()
 
 class Peer():
+
+
+    
     # two states that a seeder can be in
     AVAILBLE_FOR_CONNECTION = 'available'
     CONNECTED = 'connected'
     AWAY = 'away'
 
     ping_interval = timedelta(seconds=5)
-
+    
     def __init__(self, address, tracker_address , folder_path):
         self.state = Peer.AWAY
         self.state_lock = threading.Lock()
@@ -94,25 +98,27 @@ class Peer():
         else:
             print(f"Client wont be pinging till it seeds: {self.address} ")
         
-
+    
 
     def start_main_loop(self):
         self.state = Peer.AVAILBLE_FOR_CONNECTION
-        numConSockets =0
-        while True:
+        
+        #self.upload()
+       # numConSockets =0
+       # while True:
 
-
-            if numConSockets < self.max_conSockets and len(self.agreedToSeed) >0:
-                threading.Thread(target=self.upload).start()
-                numConSockets += 1
+            
+            #if numConSockets < self.max_conSockets and len(self.agreedToSeed) >0:
+            #    threading.Thread(target=self.upload).start()
+            #    numConSockets += 1
 
             # remeber need to upload leachers filelist and add to be pinged if they agree to being a seeder for a file
-            new_seeder,new_file_name  = self.download()
-            if new_seeder:
-                self.add_to_tracker()
-                self.upload_file_info()
-                print(f"{self.address} is now able to seed {new_file_name}")
-
+        new_seeder,new_file_name  = self.download()
+            #if new_seeder:
+            #    self.add_to_tracker()
+            #    self.upload_file_info()
+            #    print(f"{self.address} is now able to seed {new_file_name}")
+            
 
             
             
@@ -144,21 +150,23 @@ class Peer():
                 leecher_socket.sendall(hash)
                 leecher_socket.sendall(file_chunk_list[index])
 
-                print(f"{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}")
+                print(f"\rChunk {index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}", end="")
 
                 response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:
                     index += 1
                 elif response == Request.NOT_ACK:
-                    print("File Acknowledgement Failed... Resending")
+                    print("\rFile Chunk Acknowledgement Failed... Resending", end="")
                 else:
-                    print("Unknown Response:", response)
+                     print("\rUnknown Response:", response, end="")
 
-            print("Completed Sending File Chunk")
+            print()
+            print(f"Completed Sending File Chunk of {file_name}")
 
             with self.state_lock:
                 self.state = Peer.AVAILBLE_FOR_CONNECTION
         except Exception as e:
+            print()
             print(f"Exception in send file_thread. File is not sent correctly?\n{e}")
             with self.state_lock:
                 self.state = Peer.AVAILBLE_FOR_CONNECTION
@@ -202,9 +210,11 @@ class Peer():
         message = Request.REQUEST_SEEDER_LIST
         tracker_socket = socket(AF_INET, SOCK_DGRAM)
         tracker_socket.sendto(message.encode(), self.tracker_address)
-        list, addr = tracker_socket.recvfrom(1024)
+        list, addr = tracker_socket.recvfrom(1024) #forcibly clsoed
         seeder_list = json.loads(list.decode())
         print("Obtained Seeder List:", seeder_list)
+        response, addr = tracker_socket.recvfrom(1024)
+        print("Seeder List Request Result:", response.decode())
         tracker_socket.close()
         return seeder_list
 
@@ -216,6 +226,8 @@ class Peer():
         list, addr = tracker_socket.recvfrom(1024)
         file_list = json.loads(list.decode())
         print("Obtained File List:", file_list)
+        response, addr = tracker_socket.recvfrom(1024)
+        print("File List Request Result:", response.decode())
         tracker_socket.close()
         return file_list
 
@@ -241,10 +253,8 @@ class Peer():
 
         #calculate file chunk info
         file_size = self.file_list_download[file_name]
-        file_chunk_info_list = File.get_file_send_rule(file_size, list_seeder_con)
+        num_chunks, file_chunk_info_list = File.get_file_send_rule(file_size, len(list_seeder_con))
 
-        num_chunks = file_chunk_info_list[0][0]
-        file_chunk_info_list = file_chunk_info_list[1:]
         file_parts = [None]*num_chunks
 
         if len(list_seeder_con) > 1:
@@ -287,34 +297,40 @@ class Peer():
         index = 0
         while index < num_chunks:
             # recieve hash and file
-            received_hash = seeder_soc.recv(32)
-            file_chunk = seeder_soc.recv(File.chunk_size)
+            received_header = seeder_soc.recv(struct.calcsize("i32s"))
+            file_chunk_size, received_hash = struct.unpack("i32s", received_header)
+            file_chunk = Request.myrecvall(seeder_soc, file_chunk_size, File.chunk_size)
 
             # computer and equate hashes
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:
-                print(f"{index}: Received {len(file_chunk)}")
-                print("hashes are equal")
+                print(f"\rChunk {index}: Received {len(file_chunk)} and hashes are equal", end='')
+                
                 file_parts[num_chunks_to_skip + index] = file_chunk
                 index += 1
                 seeder_soc.sendall(Request.ACK.encode())
             else:
                 seeder_soc.sendall(Request.NOT_ACK.encode())
-                print(f"{index}: File failed. Not saving chunk... file size {len(file_chunk)}")
-  
+                print(f"\rChunk {index}: Hashes check failed. Not saving chunk... file size {len(file_chunk)}", end='')
+
+        print()
         seeder_soc.close()
 
     #Liam's Methods
     def download(self):
-        print(f"Files Available : ")
+        print(f"Files Available Type 'a' for all files:")
         file_list_temp = list(self.file_list_download.keys())
         for index, file_name in enumerate(file_list_temp):
             print(f"{index}: {file_name} for size {self.file_list_download[file_name]}")
 
         usr_ans = input("\nEnter desired file number seperated by spaces:\n")
         
-        download_files_req = usr_ans.split(" ")
+        download_files_req = []
+        if usr_ans.lower() == 'a':
+            download_files_req = range(0, len(file_list_temp))
+        else:
+            download_files_req = usr_ans.split(" ")
 
         for file_no in download_files_req:
             self.request_file(file_list_temp[int(file_no)]) 
@@ -335,6 +351,7 @@ class Peer():
         else:
             print(f"Not seeding {file_name}")
 
+    
     
     def upload(self):
             client_socket, client_addr = self.tcp_server_socket.accept()
