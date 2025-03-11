@@ -18,19 +18,17 @@ class File():
 
         file_send_rule = []
 
-        file_send_rule.append((num_chunks, len(list_size)))
-
         start_sending_from = 0
 
-        for i in range(len(list_size)):
-            if i == (len(list_size) - 1):
-                file_send_rule.append((num_chunks_per_seeder+add_chunks, start_sending_from, seeder_list[i]))
+        for i in range(list_size):
+            if i == (list_size - 1):
+                file_send_rule.append((num_chunks_per_seeder+add_chunks, start_sending_from))
 
             else:
-                file_send_rule.append((num_chunks_per_seeder, start_sending_from, list_size[i]))
+                file_send_rule.append((num_chunks_per_seeder, start_sending_from))
                 start_sending_from += num_chunks_per_seeder*File.chunk_size
 
-        return num_chunks,file_send_rule
+        return num_chunks, file_send_rule
 
 class Request():
     # Information is sent in a string delimited by \n

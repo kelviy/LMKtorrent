@@ -7,11 +7,10 @@ from packet import Request
 import json
 
 def main():
-  #  ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
-   # port_tracker = int(port_tracker)
-  #  tracker_addr = (ip_tracker, port_tracker)
-    
-    tracker_addr = ("127.0.0.1",12500)
+    #ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
+    #port_tracker = int(port_tracker)
+    tracker_addr = ("127.0.0.1",12500)# (ip_tracker, port_tracker)
+
     local_tracker = Tracker(tracker_addr)
     local_tracker.start_main_loop()
 
@@ -26,7 +25,6 @@ class Tracker():
         # Elements stored as:
         # [seeder_addr: tuple, last_check_time: datatime]
         self.seeder_list = []
-        self.leacher_list = []
 
         print("Tracker is up")
 
@@ -62,7 +60,7 @@ class Tracker():
         match payload[0]:
             case Request.ADD_SEEDER:
                 return self.add_seeder(client_addr, payload[1])
-            case Request.UPLOAD_FILE_LIST:
+            case Request.UPLOAD_FILE_LIST:#upload or update
                 return self.update_file_list(payload[1])
             case Request.REQUEST_SEEDER_LIST:
                 return self.send_seeder_list(client_addr)
@@ -85,34 +83,14 @@ class Tracker():
         self.seeder_list.append([address, last_check])
         print("Added: ", address, ".... Request from:", client_address)
         return True
-    
-    #added by Liam
-    def add_leacher(self, client_address, payload):
-        last_check = datetime.now()
-        address = json.loads(payload)
-
-        #checks for unique leachers
-        for seeder in self.leacher_list:
-             if seeder[0] == address:
-                  return "Leacher is already Registered"
-             
-        self.leacher_list.append([address, last_check])
-        print("Added: ", address, ".... Request from:", client_address)
-        return True
-
 
     def update_file_list(self, payload):
-        self.file_list = json.loads(payload)
-
-        # for file_str in payload:
-        #     file_info = file_str.split(" ")
-            
-        #     #checks for unique files
-        #     if file_info[0] in self.file_list:
-        #         return "File names are not unique"
-        #     else:
-        #          self.file_list[file_info[0]] = file_info[1]
+        tmp_file_list = json.loads(payload)
+        for i in tmp_file_list.keys():
+            if i not in self.file_list.keys():
+                self.file_list[i] = tmp_file_list[i]
         
+            
         print("Successfully updated file list")
         return True 
 
