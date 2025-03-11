@@ -132,7 +132,7 @@ class Seeder():
                 leecher_socket.sendall(header)
                 leecher_socket.sendall(file_chunk_list[index])
 
-                print(f"\r{index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}", end="")
+                print(f"\rChunk {index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}", end="")
 
                 response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:

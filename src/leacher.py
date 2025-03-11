@@ -147,13 +147,13 @@ class Leacher:
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:
-                print(f"\r{index}: Received {len(file_chunk)} and hashes are equal", end='')
+                print(f"\rChunk {index}: Received {len(file_chunk)} and hashes are equal", end='')
                 file_parts[num_chunks_to_skip + index] = file_chunk
                 index += 1
                 seeder_soc.sendall(Request.ACK.encode())
             else:
                 seeder_soc.sendall(Request.NOT_ACK.encode())
-                print(f"\r{index}: Hashes check failed. Not saving chunk... file size {len(file_chunk)}", end='')
+                print(f"\rChunk {index}: Hashes check failed. Not saving chunk... file size {len(file_chunk)}", end='')
 
         print()
   
