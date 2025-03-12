@@ -1,0 +1,3 @@
+2025-03-12 18:57:58,449-tracker('127.0.0.1', 12500):DEBUG->>Tracker contents: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {}, 'seeder_list': []}
+2025-03-12 18:57:58,450-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 58090)
+2025-03-12 18:57:58,450-tracker('127.0.0.1', 12500):DEBUG->>Request Message:add_seeder
