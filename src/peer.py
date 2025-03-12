@@ -15,6 +15,7 @@ import time
 from my_gui import Ui_MainWindow
 from packet import Request, File
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QInputDialog
 def main():
     # current_dir = os.getcwd()
     # parent_dir = os.path.dirname(current_dir)
@@ -29,12 +30,12 @@ def main():
    # ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
   #  port_tracker = int(port_tracker)
     
-    #app = QtWidgets.QApplication(sys.argv)
-    #MainWindow = QtWidgets.QMainWindow()
-    #ui = Ui_MainWindow()
-    #ui.setupUi(MainWindow)
-    #MainWindow.show()
- #   sys.exit(app.exec_())
+    app = QtWidgets.QApplication([])
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    
     folder_path = "./data/" #default folder path for now
     if len(sys.argv) > 2:
         peer_address = ("127.0.0.1",int(sys.argv[1]))#(ip_peer, port_peer)
@@ -43,9 +44,11 @@ def main():
     tracker_address = ("127.0.0.1",12500)#(ip_tracker, port_tracker)
 
 
-    peer = Peer(peer_address, tracker_address, folder_path)#,ui,app)
-    
-    peer.start_main_loop()
+    peer = Peer(peer_address, tracker_address, folder_path,ui)
+    ui.setPeer(peer)
+    ui.update_file_list(peer.file_list_downloadable)
+    threading.Thread(target=peer.start_main_loop).start()
+    sys.exit(app.exec_())
 
 class Peer():
 
@@ -58,9 +61,8 @@ class Peer():
 
     ping_interval = timedelta(seconds=5)
     
-    def __init__(self, address, tracker_address , folder_path):#,ui,app):
-       # self.app = app
-        #self.ui = ui
+    def __init__(self, address, tracker_address , folder_path,ui):
+        self.ui = ui
         self.state = Peer.AWAY
         self.state_lock = threading.Lock()
         self.last_check_in = datetime.now()
@@ -113,8 +115,8 @@ class Peer():
             ping_thread.start()
         else:
             print(f"Client wont be pinging till it seeds: {self.address} ")
-        #self.ui.update_file_list(self.file_list_downloadable)
-        #self.ui.btn_Download.clicked.connect(partial(Peer.download,self))
+        
+        
         
     
 
@@ -135,14 +137,14 @@ class Peer():
                 
             
              #remeber need to upload leachers filelist and add to be pinged if they agree to being a seeder for a file
-            new_seeder,new_file_name  = self.download()
-            if new_seeder:
-                self.seeding = True#!
-                self.add_to_tracker()
-                self.upload_file_info()
-                ping_thread = threading.Thread(target=self.ping_tracker)
-                ping_thread.start()
-                print(f"{self.address} is now able to seed {new_file_name}")
+            #new_seeder,new_file_name  = self.download()
+           # if new_seeder:
+            #    self.seeding = True#!
+            #    self.add_to_tracker()
+            #    self.upload_file_info()
+            #    ping_thread = threading.Thread(target=self.ping_tracker)
+             #   ping_thread.start()
+            #    print(f"{self.address} is now able to seed {new_file_name}")
             
 
             
@@ -297,7 +299,7 @@ class Peer():
         num_chunks, file_chunk_info_list = File.get_file_send_rule(file_size, len(list_seeder_con))
 
         file_parts = [None]*num_chunks
-       # self.ui.add_file_item(file_name)
+       
         if len(list_seeder_con) > 1:
             with ThreadPoolExecutor(max_workers=self.max_parallel_seeders) as thread_pool:
                 futures = []
@@ -364,26 +366,32 @@ class Peer():
         file_list_temp = list(self.file_list_downloadable.keys())
         for index, file_name in enumerate(file_list_temp):
             print(f"{index}: {file_name} for size {self.file_list_downloadable[file_name]}")
-
-        usr_ans = input("\nEnter desired file number seperated by spaces:\n")
+        usr_ans = self.ui.cmb_fileList.currentIndex()
+        #usr_ans, ok = QInputDialog.getText(None, "Download File", "Enter desired file number separated by spaces (or 'a' for all files):")
+        #usr_ans = input("\nEnter desired file number seperated by spaces:\n")
         
         download_files_req = []
-        if usr_ans.lower() == 'a':
+        #if usr_ans.lower() == 'a':
+        if usr_ans == 0:
             download_files_req = range(0, len(file_list_temp))
         else:
             download_files_req = usr_ans.split(" ")
         print("Requesting files...")
         for file_no in download_files_req:
             self.request_file(file_list_temp[int(file_no)]) 
-        if not usr_ans.isdigit():
-            usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
+        if  usr_ans == 0:
+            usr_ans_2, ok = QInputDialog.getText(None, "Download File", "Would you like to seed all files (y/n)")
+       
+            #usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
         else:
             file_name =file_list_temp[int(usr_ans)]
-            usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
+            usr_ans_2, ok = QInputDialog.getText(None, "Download File", f"Would you like to seed {file_name} (y/n)")
+       
+           # usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
         if usr_ans_2 == "y":
             if usr_ans.lower() == 'a':
                 if len(self.agreedToSeed) == 0:
-                    self.seeding = True#!
+                    self.seeding = True
                 for i in file_list_temp:
                     file_name = i
                     file_names = os.listdir(self.folder_path)#! leacher needs to download file into data 
@@ -392,7 +400,7 @@ class Peer():
                     self.agreedToSeed.append(file_name)
                     print(f"Seeding {file_name}")
                 if self.seeding:
-                    self.seeding = True#!
+                    self.seeding = True
                         
                     return True,file_name
                 else:            
@@ -404,7 +412,7 @@ class Peer():
                 self.agreedToSeed.append(file_name)
                 print(f"Seeding {file_name}")
                 if len(self.agreedToSeed) == 0:
-                    self.seeding = True#!
+                    self.seeding = True
                     
                     return True,file_name
                 else:            
@@ -482,6 +490,132 @@ class Peer():
                             #    print("Parallel Limit Reached. Closing Connection")
                              #   client_socket.close()
 
+#GUi
+
+
+class Ui_MainWindow(object):
+    peer = ""
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(1032, 635)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
+        self.scrollArea.setGeometry(QtCore.QRect(100, 80, 871, 271))
+        self.scrollArea.setMouseTracking(False)
+        self.scrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.scrollArea.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName("scrollArea")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 848, 1222))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.frame = QtWidgets.QFrame(self.scrollAreaWidgetContents)
+        self.frame.setMinimumSize(QtCore.QSize(0, 1200))
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        
+        self.cmb_fileList = QtWidgets.QComboBox(self.centralwidget)
+        self.cmb_fileList.setGeometry(QtCore.QRect(410, 380, 211, 41))
+        self.cmb_fileList.setObjectName("cmb_fileList")
+        
+        self.btn_Download = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_Download.setGeometry(QtCore.QRect(460, 450, 121, 41))
+        self.btn_Download.setObjectName("btn_Download")
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1032, 26))
+        self.menubar.setObjectName("menubar")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.wdgt_file = QtWidgets.QWidget(self.frame)
+        self.pgr_file = QtWidgets.QProgressBar(self.wdgt_file)
+        self.lbl_filename = QtWidgets.QLabel(self.wdgt_file)
+        self.lbl_numSeed = QtWidgets.QLabel(self.wdgt_file)
+        self.lbl_numLeachers = QtWidgets.QLabel(self.wdgt_file)
+        self.lbl_seedImg = QtWidgets.QLabel(self.wdgt_file)
+        self.lbl_LeachImg = QtWidgets.QLabel(self.wdgt_file)
+        self.btn_Download.clicked.connect(self.clicked)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        #self.lbl_filename.setText(_translate("MainWindow", "TextLabel"))
+        #self.lbl_numSeed.setText(_translate("MainWindow", "TextLabel"))
+        #self.lbl_numLeachers.setText(_translate("MainWindow", "TextLabel"))
+        self.btn_Download.setText(_translate("MainWindow", "PushButton"))
+    
+        
+    
+    def update_file_list(self, file_list):
+        bool = False
+
+
+        if self.cmb_fileList.count() == 0:
+            self.cmb_fileList.addItem("All files")
+            for i in file_list.keys():
+                self.cmb_fileList.addItem(i)
+        else:
+
+            for i in file_list.keys():
+                
+
+                for j in range(self.cmb_fileList.count()):
+                    if i == self.cmb_fileList.itemText(j):
+                        bool =True
+                if bool == False:
+
+                    self.cmb_fileList.addItem(i)
+                    bool = False
+    def add_file_item(self,file_name):
+        
+        self.wdgt_file.setGeometry(QtCore.QRect(40, 10, 750, 50))
+        self.wdgt_file.setAutoFillBackground(True)
+        self.wdgt_file.setObjectName("wdgt_file")
+        
+        self.pgr_file.setGeometry(QtCore.QRect(300, 15, 121, 23))
+        self.pgr_file.setStyleSheet("")
+        self.pgr_file.setProperty("value", 24)
+        self.pgr_file.setInvertedAppearance(False)
+        self.pgr_file.setObjectName("pgr_file")
+        
+        self.lbl_filename.setGeometry(QtCore.QRect(30, 15, 55, 16))
+        self.lbl_filename.setObjectName("lbl_filename")
+        self.lbl_filename.setText(file_name)
+        
+        self.lbl_numSeed.setGeometry(QtCore.QRect(580, 15, 55, 16))
+        self.lbl_numSeed.setObjectName("lbl_numSeed")
+        
+        self.lbl_numLeachers.setGeometry(QtCore.QRect(680, 15, 55, 16))
+        self.lbl_numLeachers.setObjectName("lbl_numLeachers")
+        
+        self.lbl_seedImg.setGeometry(QtCore.QRect(550, 10, 21, 20))
+        self.lbl_seedImg.setText("")
+        self.lbl_seedImg.setPixmap(QtGui.QPixmap("../../CSC3002F - Assignment 1/LMKtorrent/src/assets/frame0/image_5.png"))
+        self.lbl_seedImg.setScaledContents(True)
+        self.lbl_seedImg.setObjectName("lbl_seedImg")
+        
+        self.lbl_LeachImg.setGeometry(QtCore.QRect(650, 15, 21, 20))
+        self.lbl_LeachImg.setText("")
+        self.lbl_LeachImg.setPixmap(QtGui.QPixmap("../../CSC3002F - Assignment 1/LMKtorrent/src/assets/frame0/image_6.png"))
+        self.lbl_LeachImg.setScaledContents(True)
+        self.lbl_LeachImg.setObjectName("lbl_LeachImg")
+        self.verticalLayout.addWidget(self.frame)
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+    def setPeer(self,peer):
+        self.peer = peer
+    def clicked(self):
+        
+        self.peer.download()
+        return True
 
 
 if __name__ == "__main__":
