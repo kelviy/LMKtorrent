@@ -2,6 +2,7 @@
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from datetime import timedelta, datetime
 import struct
@@ -11,8 +12,9 @@ import hashlib
 import json
 import os
 import time
+from my_gui import Ui_MainWindow
 from packet import Request, File
-
+from PyQt5 import QtCore, QtGui, QtWidgets
 def main():
     # current_dir = os.getcwd()
     # parent_dir = os.path.dirname(current_dir)
@@ -26,7 +28,13 @@ def main():
     
    # ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 123.123.31 12500):")).split(" ")
   #  port_tracker = int(port_tracker)
-
+    
+    #app = QtWidgets.QApplication(sys.argv)
+    #MainWindow = QtWidgets.QMainWindow()
+    #ui = Ui_MainWindow()
+    #ui.setupUi(MainWindow)
+    #MainWindow.show()
+ #   sys.exit(app.exec_())
     folder_path = "./data/" #default folder path for now
     if len(sys.argv) > 2:
         peer_address = ("127.0.0.1",int(sys.argv[1]))#(ip_peer, port_peer)
@@ -35,7 +43,8 @@ def main():
     tracker_address = ("127.0.0.1",12500)#(ip_tracker, port_tracker)
 
 
-    peer = Peer(peer_address, tracker_address, folder_path)
+    peer = Peer(peer_address, tracker_address, folder_path)#,ui,app)
+    
     peer.start_main_loop()
 
 class Peer():
@@ -49,8 +58,9 @@ class Peer():
 
     ping_interval = timedelta(seconds=5)
     
-    def __init__(self, address, tracker_address , folder_path):
-         
+    def __init__(self, address, tracker_address , folder_path):#,ui,app):
+       # self.app = app
+        #self.ui = ui
         self.state = Peer.AWAY
         self.state_lock = threading.Lock()
         self.last_check_in = datetime.now()
@@ -67,7 +77,7 @@ class Peer():
         
 
         #self.address = (None,) #random generated at the moment
-        self.max_parallel_seeders = 2 #idk if i can use this for max number of conSockets 
+        self.max_parallel_seeders = 2 #idk if i can use this for max number of conSockets #! crashes when exceeds this number
         self.max_conSockets = 2
 
 
@@ -103,21 +113,27 @@ class Peer():
             ping_thread.start()
         else:
             print(f"Client wont be pinging till it seeds: {self.address} ")
+        #self.ui.update_file_list(self.file_list_downloadable)
+        #self.ui.btn_Download.clicked.connect(partial(Peer.download,self))
         
     
 
     def start_main_loop(self):
         self.state = Peer.AVAILBLE_FOR_CONNECTION
-        
+        appStarted = False
         
         
         while True:
-
+            #self.ui.update_file_list(self.file_list_downloadable)
             #self.max_conSockets
             if  self.seeding  and len(self.agreedToSeed) >0:
                 threading.Thread(target=self.upload).start()
                 self.seeding = False#!
-
+            #if appStarted == False:
+           #     appStarted = True
+          #      sys.exit(self.app.exec_())
+                
+            
              #remeber need to upload leachers filelist and add to be pinged if they agree to being a seeder for a file
             new_seeder,new_file_name  = self.download()
             if new_seeder:
@@ -246,29 +262,42 @@ class Peer():
     def request_file(self, file_name):
         list_seeder_con = []
 
+        #Todo: need to add check for if files are available in seeder, maybe add another element to seederlist or make dic
+
         # sends request to all potential seeders
         for ip, port in self.seeder_list:
             soc = socket(AF_INET, SOCK_STREAM)
             soc.connect((ip, port))
 
             soc.sendall(Request.REQUEST_CONNECTION.encode())
-            response = soc.recv(1024).decode() #! stuck here
+            
+            response = soc.recv(1024).decode() 
+            
+           
 
             if response == Request.CONNECTED:
                 list_seeder_con.append(soc)
-
+#! error might be due to checking list not in loop
         # exits over the limit seeders
         if len(list_seeder_con) > self.max_parallel_seeders:
             for i in range(len(list_seeder_con) - self.max_parallel_seeders):
                 soc = list_seeder_con.pop()
-                soc.sendall(Request.EXIT)
+                soc.sendall(Request.EXIT.encode())
+                soc.close()# might close before soc sends
+        else: 
+            soc.sendall(Request.WITHIN_LIMIT.encode())
+
+            response = soc.recv(1024).decode() 
+            if response == Request.CONNECTED:
+                print("Succesfully connected to seeder")
+            
 
         #calculate file chunk info
         file_size = self.file_list_downloadable[file_name]
         num_chunks, file_chunk_info_list = File.get_file_send_rule(file_size, len(list_seeder_con))
 
         file_parts = [None]*num_chunks
-
+       # self.ui.add_file_item(file_name)
         if len(list_seeder_con) > 1:
             with ThreadPoolExecutor(max_workers=self.max_parallel_seeders) as thread_pool:
                 futures = []
@@ -282,8 +311,8 @@ class Peer():
         else:
             Peer.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
 
-        os.makedirs("tmp", exist_ok=True)
-        file_path = os.path.join("tmp", file_name)
+        os.makedirs("data", exist_ok=True)# if stuff breaks turn this into tmp
+        file_path = os.path.join("data", file_name)
 
         with open(file_path, mode='wb') as file:
             for part in file_parts:
@@ -346,62 +375,113 @@ class Peer():
         print("Requesting files...")
         for file_no in download_files_req:
             self.request_file(file_list_temp[int(file_no)]) 
-        file_name =file_list_temp[int(usr_ans)]
-        usr_ans = input(f"Would you like to seed {file_name} (y/n)\n")
-        if usr_ans == "y":
-
-            file_names = os.listdir(self.folder_path)#! leacher needs to download file into data 
-            file_size = os.path.getsize(self.folder_path + file_name)
-            self.file_list_uploadable[file_name] = file_size
-
-            if len(self.agreedToSeed) == 0:
-                self.seeding = True#!
+        if not usr_ans.isdigit():
+            usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
+        else:
+            file_name =file_list_temp[int(usr_ans)]
+            usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
+        if usr_ans_2 == "y":
+            if usr_ans.lower() == 'a':
+                if len(self.agreedToSeed) == 0:
+                    self.seeding = True#!
+                for i in file_list_temp:
+                    file_name = i
+                    file_names = os.listdir(self.folder_path)#! leacher needs to download file into data 
+                    file_size = os.path.getsize(self.folder_path + file_name)
+                    self.file_list_uploadable[file_name] = file_size
+                    self.agreedToSeed.append(file_name)
+                    print(f"Seeding {file_name}")
+                if self.seeding:
+                    self.seeding = True#!
+                        
+                    return True,file_name
+                else:            
+                    return False,file_name
+            else:    
+                file_names = os.listdir(self.folder_path)#! leacher needs to download file into data 
+                file_size = os.path.getsize(self.folder_path + file_name)
+                self.file_list_uploadable[file_name] = file_size
                 self.agreedToSeed.append(file_name)
                 print(f"Seeding {file_name}")
-                return True,file_name
-            else:            
-                return False,file_name
+                if len(self.agreedToSeed) == 0:
+                    self.seeding = True#!
+                    
+                    return True,file_name
+                else:            
+                    return False,file_name
         else:
             print(f"Not seeding {file_name}")
 
     
     
     def upload(self):
+            
+        #Todo: need to add check for if files are available in seeder, maybe add another element to seederlist or make dic
             while True:
                 client_socket, client_addr = self.tcp_server_socket.accept()
                 self.numConSockets-=1
                 # request information will be delimited by "\n"
                 request = client_socket.recv(2048).decode().splitlines()
-
+                
 
                 match request[0]:
                     case Request.REQUEST_CONNECTION:
-                        # returns connected or queue back to leecher. 
-                        # connected means that the server will proceed to transfer the file
-                        # queue means that the leecher is in the queue for their request
+                        #request = client_socket.recv(2048).decode().splitlines()
+
+                    # match request[0]:
+                           # case Request.WITHIN_LIMIT:
+                                
+
+
+
+
+                                # returns connected or queue back to leecher. 
+                                # connected means that the server will proceed to transfer the file
+                                # queue means that the leecher is in the queue for their request
+
+
                         with self.state_lock:
-                            if self.state == Peer.AVAILBLE_FOR_CONNECTION:
-                                # encoded json string of a list containing file request info
-                                # file_name, chunk start, chunk end, chunk size
-                                self.state = Peer.CONNECTED
-                                client_socket.sendall(Request.CONNECTED.encode())
-                                response = client_socket.recv(2048).decode().splitlines()
-                                if response[0] == Request.REQUEST_FILE_CHUNK:
-                                    # creates a new thread to send the file_part
-                                    # files info list format:
-                                    #  [file_name, num_chunks, send_after]
-                                    file_request_info = json.loads(response[1])
-                                    client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
-                                    client_thread.start()
-                                else:
-                                    # close if client did not acknowledge
-                                    print("Client did not request file chunk. Closing socket")
-                                    self.state = Peer.AVAILBLE_FOR_CONNECTION
-                                    client_socket.close()
-                            else:
-                                # close if not available
-                                client_socket.sendall(Request.AWAY.encode())
-                                client_socket.close()
+                                    if self.state == Peer.AVAILBLE_FOR_CONNECTION:
+                                        # encoded json string of a list containing file request info
+                                        # file_name, chunk start, chunk end, chunk size
+                                        self.state = Peer.CONNECTED
+                                        client_socket.sendall(Request.CONNECTED.encode())
+                                        response = client_socket.recv(2048).decode().splitlines()
+                                        match response[0]:#!idk why we get ewquest_file_chunk here
+                                            case Request.WITHIN_LIMIT:
+                                                client_socket.sendall(Request.CONNECTED.encode())
+                                                print("Within Limit")
+                                                response = client_socket.recv(2048).decode().splitlines()
+                                            case Request.EXIT:
+                                                
+                                                print("Parallel Limit Reached. Closing Connection")
+                                                client_socket.close()
+                                                
+
+                                        
+                                        if response[0] == Request.REQUEST_FILE_CHUNK:
+                                            # creates a new thread to send the file_part
+                                            # files info list format:
+                                            #  [file_name, num_chunks, send_after]
+                                            file_request_info = json.loads(response[1])
+                                            client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
+                                            client_thread.start()
+                                        else:
+                                            # close if client did not acknowledge
+                                            print("Client did not request file chunk. Closing socket")
+                                            self.state = Peer.AVAILBLE_FOR_CONNECTION
+                                            client_socket.close()
+                                    else:
+                                        # close if not available
+                                        client_socket.sendall(Request.AWAY.encode())
+                                        client_socket.close()
+
+                       
+                                
+                           # case Request.EXIT:
+                            #    print("Parallel Limit Reached. Closing Connection")
+                             #   client_socket.close()
+
 
 
 if __name__ == "__main__":

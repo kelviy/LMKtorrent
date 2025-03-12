@@ -79,6 +79,8 @@ class Request():
     ACK = "acknolwedgement"
     # not ack
     NOT_ACK = "error_notacknol"
+    #check for over parallel count
+    WITHIN_LIMIT = "within_limit"
 
     # ensuring all data in tcp is received
     @staticmethod
