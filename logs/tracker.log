@@ -1,3 +1,121 @@
 2025-03-12 18:57:58,449-tracker('127.0.0.1', 12500):DEBUG->>Tracker contents: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {}, 'seeder_list': []}
 2025-03-12 18:57:58,450-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 58090)
 2025-03-12 18:57:58,450-tracker('127.0.0.1', 12500):DEBUG->>Request Message:add_seeder
+2025-03-12 20:16:51,281-tracker('127.0.0.1', 12500):DEBUG->>Tracker contents: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {}, 'seeder_list': []}
+2025-03-12 20:16:55,094-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 52308)
+2025-03-12 20:16:55,094-tracker('127.0.0.1', 12500):DEBUG->>Request Message:add_seeder
+2025-03-12 20:16:55,094-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['add_seeder', '["127.0.0.1", 12501]']
+2025-03-12 20:16:55,094-tracker('127.0.0.1', 12500):INFO->>Added: ['127.0.0.1', 12501].... Request from: ('127.0.0.1', 52308)
+2025-03-12 20:16:55,094-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 16, 55, 94649)]]}
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 56053)
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Request Message:upload_file_list
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['upload_file_list', '{".DS_Store": 6148, "video.zip": 12665642, "Senior Lab - Computer Science Building - UCT video venue finder.mp4": 13070983, "NetworkApp2025.pdf": 87478}']
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):INFO->>Successfully updated file list
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 16, 55, 94649)]]}
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 59369)
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 59369) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:16:55,095-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 16, 55, 95522)]]}
+2025-03-12 20:17:11,034-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 54206)
+2025-03-12 20:17:11,034-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_seeder_list
+2025-03-12 20:17:11,034-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_seeder_list']
+2025-03-12 20:17:11,034-tracker('127.0.0.1', 12500):INFO->>Sent seeder list to: ('127.0.0.1', 54206)
+2025-03-12 20:17:11,035-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61092)
+2025-03-12 20:17:11,035-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_file_list
+2025-03-12 20:17:11,035-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_file_list']
+2025-03-12 20:17:11,036-tracker('127.0.0.1', 12500):INFO->>Sent File List to: ('127.0.0.1', 61092)
+2025-03-12 20:17:51,328-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 54510)
+2025-03-12 20:17:51,329-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_seeder_list
+2025-03-12 20:17:51,329-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_seeder_list']
+2025-03-12 20:17:51,330-tracker('127.0.0.1', 12500):INFO->>Sent seeder list to: ('127.0.0.1', 54510)
+2025-03-12 20:17:51,332-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61510)
+2025-03-12 20:17:51,332-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_file_list
+2025-03-12 20:17:51,332-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_file_list']
+2025-03-12 20:17:51,332-tracker('127.0.0.1', 12500):INFO->>Sent File List to: ('127.0.0.1', 61510)
+2025-03-12 20:18:37,770-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 49869)
+2025-03-12 20:18:37,772-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_seeder_list
+2025-03-12 20:18:37,772-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_seeder_list']
+2025-03-12 20:18:37,772-tracker('127.0.0.1', 12500):INFO->>Sent seeder list to: ('127.0.0.1', 49869)
+2025-03-12 20:18:37,774-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 60509)
+2025-03-12 20:18:37,774-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_file_list
+2025-03-12 20:18:37,774-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_file_list']
+2025-03-12 20:18:37,774-tracker('127.0.0.1', 12500):INFO->>Sent File List to: ('127.0.0.1', 60509)
+2025-03-12 20:18:47,991-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61122)
+2025-03-12 20:18:47,992-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_seeder_list
+2025-03-12 20:18:47,992-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_seeder_list']
+2025-03-12 20:18:47,992-tracker('127.0.0.1', 12500):INFO->>Sent seeder list to: ('127.0.0.1', 61122)
+2025-03-12 20:18:47,993-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61557)
+2025-03-12 20:18:47,993-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_file_list
+2025-03-12 20:18:47,993-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_file_list']
+2025-03-12 20:18:47,993-tracker('127.0.0.1', 12500):INFO->>Sent File List to: ('127.0.0.1', 61557)
+2025-03-12 20:18:55,095-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 52553)
+2025-03-12 20:18:55,095-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:18:55,095-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:18:55,096-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 52553) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:18:55,096-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 18, 55, 96045)]]}
+2025-03-12 20:18:55,101-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61779)
+2025-03-12 20:18:55,101-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:18:55,101-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:18:55,102-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 61779) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:18:55,102-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 18, 55, 101946)]]}
+2025-03-12 20:18:55,104-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 51698)
+2025-03-12 20:18:55,104-tracker('127.0.0.1', 12500):DEBUG->>Request Message:add_seeder
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['add_seeder', '["127.0.0.1", 12501]']
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):ERROR->>Error: Seeder is already Registered
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 56113)
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):DEBUG->>Request Message:upload_file_list
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['upload_file_list', '{".DS_Store": 6148, "video.zip": 12665642, "Senior Lab - Computer Science Building - UCT video venue finder.mp4": 13070983, "NetworkApp2025.pdf": 87478}']
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):INFO->>Successfully updated file list
+2025-03-12 20:18:55,105-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 18, 55, 101946)]]}
+2025-03-12 20:20:11,196-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61436)
+2025-03-12 20:20:11,197-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_seeder_list
+2025-03-12 20:20:11,197-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_seeder_list']
+2025-03-12 20:20:11,197-tracker('127.0.0.1', 12500):INFO->>Sent seeder list to: ('127.0.0.1', 61436)
+2025-03-12 20:20:11,201-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 59215)
+2025-03-12 20:20:11,202-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_file_list
+2025-03-12 20:20:11,202-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_file_list']
+2025-03-12 20:20:11,202-tracker('127.0.0.1', 12500):INFO->>Sent File List to: ('127.0.0.1', 59215)
+2025-03-12 20:20:55,104-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 58775)
+2025-03-12 20:20:55,105-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:20:55,105-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:20:55,105-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 58775) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:20:55,106-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 20, 55, 105909)]]}
+2025-03-12 20:20:55,108-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 56519)
+2025-03-12 20:20:55,108-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:20:55,108-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:20:55,108-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 56519) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:20:55,108-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 20, 55, 108587)]]}
+2025-03-12 20:21:16,413-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 49666)
+2025-03-12 20:21:16,414-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_seeder_list
+2025-03-12 20:21:16,414-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_seeder_list']
+2025-03-12 20:21:16,414-tracker('127.0.0.1', 12500):INFO->>Sent seeder list to: ('127.0.0.1', 49666)
+2025-03-12 20:21:16,416-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 59003)
+2025-03-12 20:21:16,416-tracker('127.0.0.1', 12500):DEBUG->>Request Message:request_file_list
+2025-03-12 20:21:16,416-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['request_file_list']
+2025-03-12 20:21:16,417-tracker('127.0.0.1', 12500):INFO->>Sent File List to: ('127.0.0.1', 59003)
+2025-03-12 20:21:36,315-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 49941)
+2025-03-12 20:21:36,319-tracker('127.0.0.1', 12500):DEBUG->>Request Message:add_seeder
+2025-03-12 20:21:36,319-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['add_seeder', '["127.0.0.1", 12502]']
+2025-03-12 20:21:36,321-tracker('127.0.0.1', 12500):INFO->>Added: ['127.0.0.1', 12502].... Request from: ('127.0.0.1', 49941)
+2025-03-12 20:21:36,323-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 20, 55, 108587)], [['127.0.0.1', 12502], datetime.datetime(2025, 3, 12, 20, 21, 36, 320219)]]}
+2025-03-12 20:21:36,324-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 63270)
+2025-03-12 20:21:36,325-tracker('127.0.0.1', 12500):DEBUG->>Request Message:upload_file_list
+2025-03-12 20:21:36,325-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['upload_file_list', '{".DS_Store": 6148, "video.zip": 12665642, "Senior Lab - Computer Science Building - UCT video venue finder.mp4": 13070983, "NetworkApp2025.pdf": 87478}']
+2025-03-12 20:21:36,325-tracker('127.0.0.1', 12500):INFO->>Successfully updated file list
+2025-03-12 20:21:36,325-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 20, 55, 108587)], [['127.0.0.1', 12502], datetime.datetime(2025, 3, 12, 20, 21, 36, 320219)]]}
+2025-03-12 20:21:36,326-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 64190)
+2025-03-12 20:21:36,326-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:21:36,326-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12502]']
+2025-03-12 20:21:36,326-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 64190) ... to update ping time on ['127.0.0.1', 12502]
+2025-03-12 20:21:36,326-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 20, 55, 108587)], [['127.0.0.1', 12502], datetime.datetime(2025, 3, 12, 20, 21, 36, 326560)]]}
+2025-03-12 20:22:55,112-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 55590)
+2025-03-12 20:22:55,113-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:22:55,113-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:22:55,113-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 55590) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:22:55,114-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 22, 55, 113702)], [['127.0.0.1', 12502], datetime.datetime(2025, 3, 12, 20, 21, 36, 326560)]]}
+2025-03-12 20:22:55,116-tracker('127.0.0.1', 12500):DEBUG->>Connection Received from:('127.0.0.1', 61800)
+2025-03-12 20:22:55,116-tracker('127.0.0.1', 12500):DEBUG->>Request Message:ping_tracker
+2025-03-12 20:22:55,116-tracker('127.0.0.1', 12500):DEBUG->>Payload information:['ping_tracker', '["127.0.0.1", 12501]']
+2025-03-12 20:22:55,116-tracker('127.0.0.1', 12500):INFO->>Ping Received from: ('127.0.0.1', 61800) ... to update ping time on ['127.0.0.1', 12501]
+2025-03-12 20:22:55,116-tracker('127.0.0.1', 12500):DEBUG->>Tracker Instance: {'logger': <Logger tracker('127.0.0.1', 12500) (DEBUG)>, 'address': ('127.0.0.1', 12500), 'udp_server_socket': <socket.socket fd=4, family=2, type=2, proto=0, laddr=('127.0.0.1', 12500)>, 'seeder_time_out': datetime.timedelta(seconds=600), 'file_list': {'.DS_Store': 6148, 'video.zip': 12665642, 'Senior Lab - Computer Science Building - UCT video venue finder.mp4': 13070983, 'NetworkApp2025.pdf': 87478}, 'seeder_list': [[['127.0.0.1', 12501], datetime.datetime(2025, 3, 12, 20, 22, 55, 116771)], [['127.0.0.1', 12502], datetime.datetime(2025, 3, 12, 20, 21, 36, 326560)]]}

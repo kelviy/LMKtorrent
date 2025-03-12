@@ -55,10 +55,7 @@ class Seeder():
         self.folder_path = folder_path
         self.file_list = {}
 
-        file_names = os.listdir(folder_path)
-        for name in file_names:
-            file_size = os.path.getsize(self.folder_path + name)
-            self.file_list[name] = file_size
+        self.update_file_list(folder_path)
 
         print("File Dict:", self.file_list)
 
@@ -195,6 +192,11 @@ class Seeder():
         self.logger.debug("Add to Tracker Result: " + str(response.decode()))
         tracker_socket.close()
 
+    def update_file_list(self, folder_path):
+        file_names = os.listdir(folder_path)
+        for name in file_names:
+            file_size = os.path.getsize(self.folder_path + name)
+            self.file_list[name] = file_size
 
     def upload_file_info(self):
         message = Request.UPLOAD_FILE_LIST + "\n" + json.dumps(self.file_list)
