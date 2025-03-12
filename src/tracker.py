@@ -30,6 +30,9 @@ class Tracker():
 
     def start_main_loop(self):
         while True:
+
+
+            #For Mark: Put this in its own thread
             self.remove_inactive()
 
             # potential problem (add_seeder) if file list data is too large (can switch to tcp instead)
