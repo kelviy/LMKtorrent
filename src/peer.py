@@ -12,7 +12,7 @@ import hashlib
 import json
 import os
 import time
-from my_gui import Ui_MainWindow
+#from my_gui import MainWindow, Ui_MainWindow
 from packet import Request, File
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QInputDialog
@@ -44,10 +44,13 @@ def main():
     tracker_address = ("127.0.0.1",12500)#(ip_tracker, port_tracker)
 
 
-    peer = Peer(peer_address, tracker_address, folder_path,ui)
+    peer = Peer(peer_address, tracker_address, folder_path,ui,app)
     ui.setPeer(peer)
     ui.update_file_list(peer.file_list_downloadable)
+    
     threading.Thread(target=peer.start_main_loop).start()
+    
+     
     sys.exit(app.exec_())
 
 class Peer():
@@ -61,7 +64,8 @@ class Peer():
 
     ping_interval = timedelta(seconds=5)
     
-    def __init__(self, address, tracker_address , folder_path,ui):
+    def __init__(self, address, tracker_address , folder_path,ui,app):
+        self.app = app
         self.ui = ui
         self.state = Peer.AWAY
         self.state_lock = threading.Lock()
@@ -119,6 +123,7 @@ class Peer():
         
         
     
+
 
     def start_main_loop(self):
         self.state = Peer.AVAILBLE_FOR_CONNECTION
@@ -313,8 +318,8 @@ class Peer():
         else:
             Peer.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
 
-        os.makedirs("data", exist_ok=True)# if stuff breaks turn this into tmp
-        file_path = os.path.join("data", file_name)
+        os.makedirs("tmp", exist_ok=True)# if stuff breaks turn this into tmp
+        file_path = os.path.join("tmp", file_name)
 
         with open(file_path, mode='wb') as file:
             for part in file_parts:
@@ -372,14 +377,14 @@ class Peer():
         
         download_files_req = []
         #if usr_ans.lower() == 'a':
-        if usr_ans == 0:
+        if usr_ans == self.ui.cmb_fileList.count()-1:
             download_files_req = range(0, len(file_list_temp))
         else:
-            download_files_req = usr_ans.split(" ")
+            download_files_req = str(usr_ans).split(" ")
         print("Requesting files...")
         for file_no in download_files_req:
             self.request_file(file_list_temp[int(file_no)]) 
-        if  usr_ans == 0:
+        if  usr_ans == self.ui.cmb_fileList.count()-1:
             usr_ans_2, ok = QInputDialog.getText(None, "Download File", "Would you like to seed all files (y/n)")
        
             #usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
@@ -389,7 +394,7 @@ class Peer():
        
            # usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
         if usr_ans_2 == "y":
-            if usr_ans.lower() == 'a':
+            if usr_ans == self.ui.cmb_fileList.count()-1:
                 if len(self.agreedToSeed) == 0:
                     self.seeding = True
                 for i in file_list_temp:
@@ -418,7 +423,11 @@ class Peer():
                 else:            
                     return False,file_name
         else:
-            print(f"Not seeding {file_name}")
+            if usr_ans ==self.ui.cmb_fileList.count()-1:
+                print(f"Not seeding all files")
+            else:
+
+                print(f"Not seeding {file_name}")
 
     
     
@@ -492,7 +501,7 @@ class Peer():
 
 #GUi
 
-
+    
 class Ui_MainWindow(object):
     peer = ""
     def setupUi(self, MainWindow):
@@ -560,9 +569,10 @@ class Ui_MainWindow(object):
 
 
         if self.cmb_fileList.count() == 0:
-            self.cmb_fileList.addItem("All files")
+            
             for i in file_list.keys():
                 self.cmb_fileList.addItem(i)
+            self.cmb_fileList.addItem("All files")
         else:
 
             for i in file_list.keys():
@@ -616,6 +626,9 @@ class Ui_MainWindow(object):
         
         self.peer.download()
         return True
+    
+
+    
 
 
 if __name__ == "__main__":
