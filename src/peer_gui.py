@@ -40,7 +40,6 @@ class Peer:
     MENU = """-------MENU--------
     1. Download Files
     2. Start Seeding
-    3. Change Download/Seeding Folder
     q. Quit
     """
     def __init__(self, tracker_addr, default_file_path='./tmp/'):
@@ -77,8 +76,8 @@ class Peer:
                         self.seeder.start_main_loop()
                     else:
                         print("You need to download all files")
-                case "3":
-                    self.change_download_folder()
+                # case "3":
+                #     self.change_download_folder()
                 case "q":
                     break
 
