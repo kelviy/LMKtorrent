@@ -8,45 +8,60 @@ import hashlib
 import os
 import json
 import struct
-
-from tracker import Tracker
+import sys 
 
 def main():
-    """
-    - IP Address: 127.0.0.1 (loop back interface) & Port: 12500
-    """
+    #defaults
+    tracker_addr = ("127.0.0.1", 12500)
+    download_folder = "./tmp/"
 
-    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
-    port_tracker = int(port_tracker)
-    tracker_addr = (ip_tracker, port_tracker)
+    # manual input if put something in cli
+    if len(sys.argv) == 1:
+        print("Using Default arguments: \nTRACKER: (ip: 127.0.0.1, port: 12500)\nDownload folder: `./tmp/`")
+    else:
+        ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
+        tracker_addr = (ip_tracker, int(port_tracker))
+        download_folder = input("Enter download folder path (absolute path or relative to running scripts):")
 
-    local_leacher = Leacher(tracker_addr)
+    #start leecher
+    local_leacher = Leacher(tracker_addr, download_folder)
 
+
+    # Choose file download selection
     print(f"Files Available Type 'a' for all files:")
     file_list_temp = list(local_leacher.file_list.keys())
     for index, file_name in enumerate(file_list_temp):
-        print(f"{index}: {file_name} for size {local_leacher.file_list[file_name]}")
+        print(f"{index}: {file_name} with size {local_leacher.file_list[file_name]}")
 
     usr_ans = input("\nEnter desired file number seperated by spaces:\n")
 
+    # build download list
     download_files_req = []
     if usr_ans.lower() == 'a':
         download_files_req = range(0, len(file_list_temp))
     else:
         download_files_req = usr_ans.split(" ")
 
+    # download files
     for file_no in download_files_req:
         local_leacher.request_file(file_list_temp[int(file_no)]) 
 
 
 class Leacher:
-    def __init__(self, tracker_addr):
+    def __init__(self, tracker_addr, download_path):
+        #logging functionality
+        self.logger = File.get_logger("leacher", "leacher.log")
+
         self.tracker_address = tracker_addr
+        self.download_path = download_path
         self.seeder_list = self.get_seeder_list()  #stores a seeder_list
         self.file_list = self.get_file_list()    #stores a dictionery of file_list
 
         self.address = (None,) #random generated at the moment
         self.max_parallel_seeders = 2
+        
+        self.logger.debug("Leacher contents: " + str(self.__dict__))
+
 
 
     def get_seeder_list(self):
@@ -56,8 +71,10 @@ class Leacher:
         list, addr = tracker_socket.recvfrom(1024)
         seeder_list = json.loads(list.decode())
         print("Obtained Seeder List:", seeder_list)
+        self.logger.info("Obtained Seeder List:" + str(seeder_list))
         response, addr = tracker_socket.recvfrom(1024)
         print("Seeder List Request Result:", response.decode())
+        self.logger.info("Seeder List Request Result: " + str(response.decode()))
         tracker_socket.close()
         return seeder_list
 
@@ -69,8 +86,10 @@ class Leacher:
         list, addr = tracker_socket.recvfrom(1024)
         file_list = json.loads(list.decode())
         print("Obtained File List:", file_list)
+        self.logger.debug("Obtained File List: " + str(file_list))
         response, addr = tracker_socket.recvfrom(1024)
         print("File List Request Result:", response.decode())
+        self.logger.debug("File List Request Result: " + str(response.decode()))
         tracker_socket.close()
         return file_list
 
@@ -107,25 +126,26 @@ class Leacher:
                 futures = []
 
                 for i in range(len(list_seeder_con)):
-                    futures.append(thread_pool.submit(Leacher.get_file_part, file_name, file_chunk_info_list[i][0], file_chunk_info_list[i][1], list_seeder_con[i] ,file_parts))
+                    futures.append(thread_pool.submit(self.get_file_part, file_name, file_chunk_info_list[i][0], file_chunk_info_list[i][1], list_seeder_con[i] ,file_parts))
 
                 for future in futures:
                     future.result()
 
         else:
-            Leacher.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
+            self.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
 
-        os.makedirs("tmp", exist_ok=True)
-        file_path = os.path.join("tmp", file_name)
+        os.makedirs(self.download_path, exist_ok=True)
+        file_path = os.path.join(self.download_path, file_name)
 
         with open(file_path, mode='wb') as file:
             for part in file_parts:
                 file.write(part)
 
         print(file_name + " downloaded succesfully!")
+        self.logger.debug(str(file_name) + " download successfully")
 
             
-    def get_file_part(file_name, num_chunks, send_after, seeder_soc, file_parts):
+    def get_file_part(self, file_name, num_chunks, send_after, seeder_soc, file_parts):
         request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
         request = request.encode()
 
@@ -147,13 +167,15 @@ class Leacher:
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:
-                print(f"\rChunk {index}: Received {len(file_chunk)} and hashes are equal", end='')
+                print(f"\rChunk {index}: Received {len(file_chunk)} and hashes are equal", end='', flush=True)
+                self.logger.debug("Chunk " + str(index)+ ": Received " + str(len(file_chunk)) + " and hashes are equal")
                 file_parts[num_chunks_to_skip + index] = file_chunk
                 index += 1
                 seeder_soc.sendall(Request.ACK.encode())
             else:
                 seeder_soc.sendall(Request.NOT_ACK.encode())
-                print(f"\rChunk {index}: Hashes check failed. Not saving chunk... file size {len(file_chunk)}", end='')
+                print(f"\rChunk {index}: Hashes check failed. Not saving chunk... file size {len(file_chunk)}", end='', flush=True)
+                self.logger.debug("Chunk " + str(index)+ ": Hases check failed. Not saving chunk... file size " + str(len(file_chunk)))
 
         print()
   

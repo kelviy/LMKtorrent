@@ -3,6 +3,7 @@
 
 from socket import socket
 import math
+import logging
 
 class File():
     """Stores file information"""
@@ -29,6 +30,22 @@ class File():
                 start_sending_from += num_chunks_per_seeder*File.chunk_size
 
         return num_chunks, file_send_rule
+    
+    @staticmethod
+    def get_logger(name, log_file, level=logging.DEBUG):
+        logger = logging.getLogger(name)        
+        logger.setLevel(logging.DEBUG)
+
+        # Create a file handler with a unique filename
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler.setLevel(logging.DEBUG)
+        # Define log format
+        formatter = logging.Formatter('%(asctime)s-%(name)s:%(levelname)s->>%(message)s')
+        file_handler.setFormatter(formatter)
+            # Add handler to the logger
+        logger.addHandler(file_handler)
+
+        return logger
 
 class Request():
     # Information is sent in a string delimited by \n

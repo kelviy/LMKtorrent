@@ -9,22 +9,27 @@ import json
 import os
 import time
 import struct
+import sys
+import logging
 from packet import Request, File
 
 def main():
-    # uncomment to specify folder to make available to leechers
-    # folder_path = input("Enter folder path (absolute path or relative to running scripts):")
-    folder_path = "./data/" #default folder path for now
+    #defaults
+    folder_path = "./data/"
+    seeder_address = ("127.0.0.1", 12501)
+    tracker_address = ("127.0.0.1", 12500)
 
-    ip_seeder, port_seeder = (input("Enter Seeder ip and port number seperated by spaces (eg 127.0.0.1 12501):")).split(" ")
-    port_seeder = int(port_seeder)
-    
-    ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
-    port_tracker = int(port_tracker)
+    # manual input if add something to arguments in cli
+    if (len(sys.argv) == 1): 
+        print("Using default parameters:\n seeder file path: './data/'\nSEEDER: (ip: 127.0.0.1, port: 12501)\nTRACKER: (ip: 127.0.0.1, port: 12500)")
+    else:
+        ip_seeder, port_seeder = (input("Enter Seeder ip and port number seperated by spaces (eg 127.0.0.1 12501):")).split(" ")
+        seeder_address = (ip_seeder, int(port_seeder))
+        ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
+        tracker_address = (ip_tracker, int(port_tracker))
+        folder_path = input("Enter folder path (absolute path or relative to running scripts):")
 
-    seeder_address = (ip_seeder, port_seeder)
-    tracker_address = (ip_tracker, port_tracker)
-
+    # Starts Seeder
     local_seeder = Seeder(seeder_address, tracker_address, folder_path)
     local_seeder.start_main_loop()
 
@@ -37,6 +42,9 @@ class Seeder():
     ping_interval = timedelta(minutes=2)
 
     def __init__(self, address, tracker_address , folder_path):
+         #logging functionality
+        self.logger = File.get_logger("seeder", "seeder.log")
+
         self.state = Seeder.AWAY
         self.state_lock = threading.Lock()
         self.last_check_in = datetime.now()
@@ -64,6 +72,8 @@ class Seeder():
         # seperate thread to ping tracker
         ping_thread = threading.Thread(target=self.ping_tracker)
         ping_thread.start()
+
+        self.logger.debug("Seeder contents: " + str(self.__dict__))
 
 
     def start_main_loop(self):
@@ -96,6 +106,7 @@ class Seeder():
                             else:
                                 # close if client did not acknowledge
                                 print("Client did not request file chunk. Closing socket")
+                                self.logger.debug("Client did not request file chunk. Closing socket")
                                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
                                 client_socket.close()
                         else:
@@ -132,24 +143,29 @@ class Seeder():
                 leecher_socket.sendall(header)
                 leecher_socket.sendall(file_chunk_list[index])
 
-                print(f"\rChunk {index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}", end="")
+                print(f"\rChunk {index}: Sent {len(file_chunk_list[index])} bytes. Hash computed size: {len(hash)}", end="", flush=True)
+                self.logger.debug("Chunk " + str(index) + ": Sent " + str(len(file_chunk_list[index])) + " bytes. Hash computed size: " + str(len(hash)))
 
                 response = leecher_socket.recv(15).decode()
                 if response == Request.ACK:
                     index += 1
                 elif response == Request.NOT_ACK:
-                    print("\rFile Chunk Acknowledgement Failed... Resending", end="")
+                    print("\rFile Chunk Acknowledgement Failed... Resending", end="", flush=True)
+                    self.logger.debug("File Chunk Acknowledgement Failed... Resending")
                 else:
-                    print("\rUnknown Response:", response, end="")
+                    print("\rUnknown Response:", response, end="", flush=True)
+                    self.logger.debug("Unknonw Response: " + str(response))
 
             print()
             print(f"Completed Sending File Chunk of {file_name}")
+            self.logger.debug("Completed Sending File Chunk of " + str(file_name))
 
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
         except Exception as e:
             print()
             print(f"Exception in send file_thread. File is not sent correctly?\n{e}")
+            self.logger.debug("Exception in send file_thread. File is not sent correctly?" + str(e))
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
 
@@ -162,6 +178,7 @@ class Seeder():
             tracker_socket.sendto(message.encode(), self.tracker_address)
             response, addr = tracker_socket.recvfrom(1024)
             print("Ping Result:", response.decode())
+            self.logger.debug("Ping Result: " + str(response.decode()))
             tracker_socket.close()
 
             duration = datetime.now()-self.last_check_in
@@ -175,6 +192,7 @@ class Seeder():
         tracker_socket.sendto(message.encode(), self.tracker_address)
         response, addr = tracker_socket.recvfrom(1024)
         print("Add to Tracker Result:", response.decode())
+        self.logger.debug("Add to Tracker Result: " + str(response.decode()))
         tracker_socket.close()
 
 
@@ -184,6 +202,7 @@ class Seeder():
         tracker_socket.sendto(message.encode(), self.tracker_address)
         response, addr = tracker_socket.recvfrom(1024)
         print("Upload to Tracker Result:", response.decode())
+        self.logger.debug("Upload to Tracker Result:" + str(response.decode()))
         tracker_socket.close()
         
 
