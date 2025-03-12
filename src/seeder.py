@@ -43,7 +43,7 @@ class Seeder():
 
     def __init__(self, address, tracker_address , folder_path):
          #logging functionality
-        self.logger = File.get_logger("seeder", "seeder.log")
+        self.logger = File.get_logger("seeder"+str(address), f"./logs/seeder{address}.log")
 
         self.state = Seeder.AWAY
         self.state_lock = threading.Lock()
@@ -95,7 +95,7 @@ class Seeder():
                             # file_name, chunk start, chunk end, chunk size
                             self.state = Seeder.CONNECTED
                             client_socket.sendall(Request.CONNECTED.encode())
-                            response = client_socket.recv(2048).decode().splitlines()
+                            response = client_socket.recv(1024).decode().splitlines()
                             if response[0] == Request.REQUEST_FILE_CHUNK:
                                 # creates a new thread to send the file_part
                                 # files info list format:
@@ -103,10 +103,10 @@ class Seeder():
                                 file_request_info = json.loads(response[1])
                                 client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
                                 client_thread.start()
-                            else:
+                            elif response[0] == Request.EXIT_CONNECTION:
                                 # close if client did not acknowledge
-                                print("Client did not request file chunk. Closing socket")
-                                self.logger.debug("Client did not request file chunk. Closing socket")
+                                print("Client requested to close connection. Closing socket")
+                                self.logger.debug("Client requested to close connection. Closing socket")
                                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
                                 client_socket.close()
                         else:

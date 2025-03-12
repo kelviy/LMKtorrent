@@ -27,7 +27,7 @@ class Tracker():
     def __init__(self, tracker_addr):
 
         #logging functionality
-        self.logger = File.get_logger("tracker", "tracker.log")
+        self.logger = File.get_logger("tracker"+str(tracker_addr), "./logs/tracker.log")
 
         self.address = tracker_addr
         self.udp_server_socket = socket(AF_INET, SOCK_DGRAM)

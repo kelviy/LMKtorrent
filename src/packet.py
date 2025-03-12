@@ -83,7 +83,7 @@ class Request():
     #   "request_file_chunk \n [file_name, num_chunks, send_after]"
     REQUEST_FILE_CHUNK = "send_file_chunk"
     # Sent by leecher to seeder to ask to ask to leave queue or leave connection
-    EXIT = "exit"
+    EXIT_CONNECTION = "exit_connection"
 
      # request execution encounted errors
     # Has the format:

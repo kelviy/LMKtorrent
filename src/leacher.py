@@ -50,7 +50,7 @@ def main():
 class Leacher:
     def __init__(self, tracker_addr, download_path):
         #logging functionality
-        self.logger = File.get_logger("leacher", "leacher.log")
+        self.logger = File.get_logger("leacher", "./logs/leacher.log")
 
         self.tracker_address = tracker_addr
         self.download_path = download_path
@@ -109,9 +109,12 @@ class Leacher:
 
         # exits over the limit seeders
         if len(list_seeder_con) > self.max_parallel_seeders:
-            for i in range(len(list_seeder_con) - self.max_parallel_seeders):
+            print("Connected:", len(list_seeder_con), "....Closing:", len(list_seeder_con) - self.max_parallel_seeders, "sockets")
+            self.logger.debug("Connected %s ...Closing: %s sockets", len(list_seeder_con), len(list_seeder_con) - self.max_parallel_seeders)
+            for _ in range(len(list_seeder_con) - self.max_parallel_seeders):
                 soc = list_seeder_con.pop()
-                soc.sendall(Request.EXIT)
+                soc.sendall(Request.EXIT_CONNECTION.encode())
+                soc.close()
 
         #calculate file chunk info
         file_size = self.file_list[file_name]
@@ -175,7 +178,7 @@ class Leacher:
             else:
                 seeder_soc.sendall(Request.NOT_ACK.encode())
                 print(f"\rChunk {index}: Hashes check failed. Not saving chunk... file size {len(file_chunk)}", end='', flush=True)
-                self.logger.debug("Chunk " + str(index)+ ": Hases check failed. Not saving chunk... file size " + str(len(file_chunk)))
+                self.logger.debug("Chunk " + str(index)+ ": Hashes check failed. Not saving chunk... file size " + str(len(file_chunk)))
 
         print()
   
