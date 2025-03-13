@@ -8,11 +8,11 @@
 # Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 import sys, os, traceback
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
     QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
 
 # --- Custom Widget to display download progress for a single file download instance ---
@@ -39,7 +39,8 @@ class FileDownloadWidget(QWidget):
         # Container for sub progress bars (each representing a seeder connection)
         self.sub_container = QVBoxLayout()
         frame = QFrame()
-        frame.setFrameStyle(QFrame.Box | QFrame.Raised)
+        # Use PyQt6 enums: QFrame.Shape.Box and QFrame.Shadow.Raised
+        frame.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Raised)
         frame.setLayout(self.sub_container)
         main_layout.addWidget(frame)
         
@@ -138,7 +139,7 @@ class MainWindow(QMainWindow):
         self.change_tracker_button = QPushButton("Change Tracker")
         self.change_tracker_button.clicked.connect(self.change_tracker)
         top_layout.addWidget(self.change_tracker_button)
-        self.download_all_button = QPushButton("Download All Files (Sequential)")
+        self.download_all_button = QPushButton("Download All Files")
         self.download_all_button.clicked.connect(self.download_all_files)
         top_layout.addWidget(self.download_all_button)
         self.main_layout.addLayout(top_layout)
@@ -280,4 +281,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
