@@ -215,7 +215,12 @@ class MainWindow(QMainWindow):
 
 
         else:
-            print("You need to download all files")
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Error")
+            msg_box.setText("You need to download all files")
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg_box.exec()
+            
 
     
     def init_peer(self, download_folder):
