@@ -276,3 +276,7 @@ class Seeder():
                                         # close if not available
                                         client_socket.sendall(Request.AWAY.encode())
                                         client_socket.close()
+
+
+if __name__ == "__main__":
+    main()

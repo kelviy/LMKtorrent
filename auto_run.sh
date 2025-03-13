@@ -12,5 +12,5 @@ else
     echo "Proccess IDs:"
     echo $(ps -eaf | grep -E "src/tracker.py|src/seeder.py" | grep -v grep | awk '{print $9, $2}')
 
-    python3 src/leacher.py
+    #python3 src/leacher.py
 fi

@@ -6,7 +6,7 @@ import threading
 
 #from my_gui import MainWindow, Ui_MainWindow
 from leacher import Leacher
-from my_gui import Ui_MainWindow
+from PYQT_GUI import Ui_MainWindow
 from seeder import Seeder
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QInputDialog
@@ -32,6 +32,7 @@ def main():
     MainWindow.show()
     
     folder_path = "./data/" #default folder path for now
+
     if len(sys.argv) > 2:
         peer_address = ("127.0.0.1",int(sys.argv[1]))#(ip_peer, port_peer)
     else:
@@ -51,21 +52,19 @@ def main():
 class Peer():
 
     
-    def __init__(self, address, tracker_address , folder_path,ui,app):
-        self.app = app
-        self.ui = ui
+    def __init__(self, address, tracker_address , folder_path):
         self.seeding = False
         self.file_list_downloadable = {}
         self.isLeacher = False
         if len(sys.argv) > 2:
             self.seeder = Seeder(address, tracker_address, folder_path)
-            self.ui.update_file_list(self.seeder.file_list_uploadable)
+            self.ui.update_file_list(self.seeder.file_list)
             print("seeding")
             self.seeding = True
         else:
             self.leacher = Leacher(tracker_address, folder_path)
-            self.ui.update_file_list(self.leacher.file_list_downloadable)
-            self.file_list_downloadable = self.leacher.file_list_downloadable
+            self.ui.update_file_list(self.leacher.file_list)
+            self.file_list_downloadable = self.leacher.file_list
             self.isLeacher = True
             print(f"Client wont be pinging till it seeds: {self.leacher.address} ")
             print("not seeding")

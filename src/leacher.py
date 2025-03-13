@@ -205,9 +205,9 @@ class Leacher:
 
     def download(self,cmb_fileList):
         print(f"Files Available Type 'a' for all files:")
-        file_list_temp = list(self.file_list_downloadable.keys())
+        file_list_temp = list(self.file_list.keys())
         for index, file_name in enumerate(file_list_temp):
-            print(f"{index}: {file_name} for size {self.file_list_downloadable[file_name]}")
+            print(f"{index}: {file_name} for size {self.file_list[file_name]}")
         usr_ans = cmb_fileList.currentIndex()
         #usr_ans, ok = QInputDialog.getText(None, "Download File", "Enter desired file number separated by spaces (or 'a' for all files):")
         #usr_ans = input("\nEnter desired file number seperated by spaces:\n")
