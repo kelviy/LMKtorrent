@@ -15,6 +15,20 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
 
+def main():
+    app = QApplication(sys.argv)
+    #defaults
+    tracker_addr = ("127.0.0.1", 12500)
+
+    usr_ans = input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")
+    if usr_ans != "":
+        usr_ans = usr_ans.split(" ")
+        tracker_addr = (usr_ans[0], int(usr_ans))
+    
+    window = MainWindow(tracker_addr)
+    window.show()
+    sys.exit(app.exec())
+
 # --- Custom Widget to display download progress for a single file download instance ---
 class FileDownloadWidget(QWidget):
     def __init__(self, file_name, download_id):
@@ -106,13 +120,13 @@ class DownloadWorker(QThread):
 
 # --- Main Window ---
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, addr):
         super().__init__()
         self.setWindowTitle("File Downloader GUI")
         self.resize(900, 700)
         self.peer = None  # Will be initialized in init_peer
         # Default tracker address
-        self.tracker_addr = ("127.0.0.1", 12500)
+        self.tracker_addr = addr
         # For sequential downloads (Download All Files)
         self.sequential_queue = []  # List of file names (in order)
         self.current_worker = None  # For sequential mode
@@ -278,7 +292,4 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+    main()
