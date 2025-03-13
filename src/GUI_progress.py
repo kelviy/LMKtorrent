@@ -7,10 +7,11 @@
 #
 # Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
+from operator import add
 import sys, os, traceback
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
-    QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog
+    QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog, QMessageBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
@@ -19,15 +20,19 @@ def main():
     app = QApplication(sys.argv)
     #defaults
     tracker_addr = ("127.0.0.1", 12500)
+    seeder_reference = []
 
     usr_ans = input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")
     if usr_ans != "":
         usr_ans = usr_ans.split(" ")
         tracker_addr = (usr_ans[0], int(usr_ans))
     
-    window = MainWindow(tracker_addr)
+    window = MainWindow(tracker_addr, seeder_reference)
     window.show()
-    sys.exit(app.exec())
+    app.exec()
+
+    seeder_reference[0].start_main_loop()
+
 
 # --- Custom Widget to display download progress for a single file download instance ---
 class FileDownloadWidget(QWidget):
@@ -120,7 +125,7 @@ class DownloadWorker(QThread):
 
 # --- Main Window ---
 class MainWindow(QMainWindow):
-    def __init__(self, addr):
+    def __init__(self, addr, seeder_reference):
         super().__init__()
         self.setWindowTitle("File Downloader GUI")
         self.resize(900, 700)
@@ -163,14 +168,16 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(self.file_list_widget)
         
         # Refresh button
-        self.refresh_button = QPushButton("Refresh File List")
-        self.refresh_button.clicked.connect(self.load_file_list)
-        self.main_layout.addWidget(self.refresh_button)
+        self.seed_button = QPushButton("Seed All Files")
+        self.seed_button.clicked.connect(self.seed_all_files)
+        self.main_layout.addWidget(self.seed_button)
         
         # Download selected files button (for individual downloads)
         self.download_button = QPushButton("Download Selected Files")
         self.download_button.clicked.connect(self.download_selected_files)
         self.main_layout.addWidget(self.download_button)
+
+        
         
         # Scroll area for file download widgets (progress list that sticks to the bottom)
         self.progress_area = QScrollArea()
@@ -183,6 +190,33 @@ class MainWindow(QMainWindow):
         
         self.init_peer("./tmp/")
         self.load_file_list()
+
+        #for reference seederlist back to main function
+        self.seeder_reference = seeder_reference
+
+        
+    def seed_all_files(self):
+        if self.peer.check_all_files():
+            addr, ok = QInputDialog.getText(self, "Seeding", 
+                                               "Enter Seeding IP and Port (ex: 127.0.0.1 12500):")
+            addr = addr.split()
+            if ok:
+                print("seeding")
+                self.peer.change_to_seeder((addr[0],int(addr[1])))
+                self.seeder_reference.append(self.peer.seeder)
+                # will not stop. Need to exit whole program to stop
+                #self.peer.seeder.start_main_loop()
+                msg_box = QMessageBox()
+                msg_box.setWindowTitle("Seeding")
+                msg_box.setText("Seeder started. Switching to terminal")
+                msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+                msg_box.exec()
+                self.close()
+
+
+        else:
+            print("You need to download all files")
+
     
     def init_peer(self, download_folder):
         # Initialize Peer with the current tracker address
@@ -197,9 +231,9 @@ class MainWindow(QMainWindow):
     def change_tracker(self):
         # Show an input dialog to change tracker
         tracker_str, ok = QInputDialog.getText(self, "Change Tracker", 
-                                               "Enter Tracker IP and Port (ex: 127.0.0.1:12500):")
+                                               "Enter Tracker IP and Port (ex: 127.0.0.1 12500):")
         if ok and tracker_str:
-            parts = tracker_str.split(":")
+            parts = tracker_str.split()
             if len(parts) == 2:
                 ip = parts[0].strip()
                 try:
