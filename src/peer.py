@@ -86,15 +86,19 @@ class Peer():
     def start_main_loop(self):
         
             
-        
-        
+        lock = threading.Lock()
+        if self.seeding:
+            self.seeder.state = Seeder.AVAILBLE_FOR_CONNECTION
         while True:
-            if self.seeding:
-                self.seeder.state = Seeder.AVAILBLE_FOR_CONNECTION
-            
-            if  self.seeding:
-                threading.Thread(target=self.seeder.upload).start()
-                self.seeding = False
+            with lock:
+
+                
+                    
+                
+                if  self.seeding:
+                    
+                    threading.Thread(target=self.seeder.upload).start()
+                    self.seeding = False
 
              #remeber need to upload leachers filelist and add to be pinged if they agree to being a seeder for a file
             
@@ -104,7 +108,7 @@ class Peer():
     def reSeeding(self):
         address = self.giveLeacherAddress()
         self.seeder= Seeder(address, self.leacher.tracker_address, self.leacher.download_path)
-        
+        self.seeder.state = Seeder.AVAILBLE_FOR_CONNECTION
         
         
         self.ui.update_file_list(self.seeder.file_list_uploadable)
