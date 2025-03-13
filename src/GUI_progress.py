@@ -10,7 +10,7 @@
 import sys, os, traceback
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
-    QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame
+    QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
@@ -109,7 +109,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("File Downloader GUI")
         self.resize(900, 700)
-        self.peer = None  # Initialized in init_peer
+        self.peer = None  # Will be initialized in init_peer
+        # Default tracker address
+        self.tracker_addr = ("127.0.0.1", 12500)
         # For sequential downloads (Download All Files)
         self.sequential_queue = []  # List of file names (in order)
         self.current_worker = None  # For sequential mode
@@ -127,11 +129,15 @@ class MainWindow(QMainWindow):
         
         # Top controls
         top_layout = QHBoxLayout()
-        self.tracker_label = QLabel("Tracker: 127.0.0.1:12500")
+        self.tracker_label = QLabel(f"Tracker: {self.tracker_addr[0]}:{self.tracker_addr[1]}")
         top_layout.addWidget(self.tracker_label)
         self.folder_button = QPushButton("Select Download Folder")
         self.folder_button.clicked.connect(self.select_folder)
         top_layout.addWidget(self.folder_button)
+        # New Change Tracker button
+        self.change_tracker_button = QPushButton("Change Tracker")
+        self.change_tracker_button.clicked.connect(self.change_tracker)
+        top_layout.addWidget(self.change_tracker_button)
         self.download_all_button = QPushButton("Download All Files (Sequential)")
         self.download_all_button.clicked.connect(self.download_all_files)
         top_layout.addWidget(self.download_all_button)
@@ -164,15 +170,33 @@ class MainWindow(QMainWindow):
         self.load_file_list()
     
     def init_peer(self, download_folder):
-        tracker_addr = ("127.0.0.1", 12500)
-        # Initialize Peer with the given download folder
-        self.peer = Peer(tracker_addr, download_folder)
+        # Initialize Peer with the current tracker address
+        self.peer = Peer(self.tracker_addr, download_folder)
     
     def select_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Download Folder")
         if folder:
             self.init_peer(folder)
             self.load_file_list()
+    
+    def change_tracker(self):
+        # Show an input dialog to change tracker
+        tracker_str, ok = QInputDialog.getText(self, "Change Tracker", 
+                                               "Enter Tracker IP and Port (ex: 127.0.0.1:12500):")
+        if ok and tracker_str:
+            parts = tracker_str.split(":")
+            if len(parts) == 2:
+                ip = parts[0].strip()
+                try:
+                    port = int(parts[1].strip())
+                except ValueError:
+                    return  # Optionally show an error message here
+                self.tracker_addr = (ip, port)
+                self.tracker_label.setText(f"Tracker: {ip}:{port}")
+                # Reinitialize peer with the new tracker using the current download folder.
+                folder = self.peer.leecher.download_path if self.peer else "./tmp/"
+                self.init_peer(folder)
+                self.load_file_list()
     
     def load_file_list(self):
         self.file_list_widget.clear()
@@ -230,7 +254,7 @@ class MainWindow(QMainWindow):
         if download_id in self.download_widgets:
             widget = self.download_widgets[download_id]
             widget.update_progress(connection_index, current, total, seeder_info)
-            # Auto-scroll to ensure the current download widget is visible.
+            # Auto-scroll so that the current download widget is visible.
             self.progress_area.verticalScrollBar().setValue(self.progress_area.verticalScrollBar().maximum())
     
     def handle_finished(self, file_name, download_id, sequential):
