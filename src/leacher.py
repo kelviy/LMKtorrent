@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+from math import ceil
 import os
 from socket import AF_INET, SOCK_DGRAM, SOCK_STREAM, socket
 import struct
@@ -13,7 +14,7 @@ class Leacher():
     def __init__(self, tracker_addr, download_path):
         #logging functionality
         #self.logger = File.get_logger("leacher", "./logs/leacher.log")
-
+        
         self.tracker_address = tracker_addr
         self.download_path = download_path
         self.seeder_list = self.get_seeder_list()  #stores a seeder_list
@@ -124,7 +125,7 @@ class Leacher():
 
 
       
-            
+            #! added self
     #TODO: fix parallel download and sending
     def get_file_part(file_name, num_chunks, send_after, seeder_soc, file_parts):
         request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
@@ -139,6 +140,7 @@ class Leacher():
 
         index = 0
         while index < num_chunks:
+            
             # recieve hash and file
             received_header = seeder_soc.recv(struct.calcsize("i32s"))
             file_chunk_size, received_hash = struct.unpack("i32s", received_header)
@@ -149,6 +151,7 @@ class Leacher():
 
             if file_hash == received_hash:
                 print(f"\rChunk {index}: Received {len(file_chunk)} and hashes are equal",end="")
+                
                 
                 file_parts[num_chunks_to_skip + index] = file_chunk
                 index += 1
@@ -161,35 +164,35 @@ class Leacher():
         seeder_soc.close()
     
 
-    def download(self):
+    def download(self,cmb_fileList):
         print(f"Files Available Type 'a' for all files:")
         file_list_temp = list(self.file_list_downloadable.keys())
         for index, file_name in enumerate(file_list_temp):
             print(f"{index}: {file_name} for size {self.file_list_downloadable[file_name]}")
-        #usr_ans = self.ui.cmb_fileList.currentIndex()
+        usr_ans = cmb_fileList.currentIndex()
         #usr_ans, ok = QInputDialog.getText(None, "Download File", "Enter desired file number separated by spaces (or 'a' for all files):")
-        usr_ans = input("\nEnter desired file number seperated by spaces:\n")
+        #usr_ans = input("\nEnter desired file number seperated by spaces:\n")
         
         download_files_req = []
-        #if usr_ans.lower() == 'a':
-        if usr_ans == "a":#self.ui.cmb_fileList.count()-1
+        cmbLastIndex = cmb_fileList.count()-1
+        if usr_ans == cmbLastIndex:
             download_files_req = range(0, len(file_list_temp))
         else:
             download_files_req = str(usr_ans).split(" ")
         print("Requesting files...")
         for file_no in download_files_req:
             self.request_file(file_list_temp[int(file_no)]) 
-        if  usr_ans == "a":
-            #usr_ans_2, ok = QInputDialog.getText(None, "Download File", "Would you like to seed all files (y/n)")
+        if usr_ans == cmbLastIndex:
+            usr_ans_2, ok = QInputDialog.getText(None, "Download File", "Would you like to seed all files (y/n)")
        
-            usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
+            #usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
         else:
             file_name =file_list_temp[int(usr_ans)]
-            #usr_ans_2, ok = QInputDialog.getText(None, "Download File", f"Would you like to seed {file_name} (y/n)")
+            usr_ans_2, ok = QInputDialog.getText(None, "Download File", f"Would you like to seed {file_name} (y/n)")
        
-            usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
+            #usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
         if usr_ans_2 == "y":
-            if usr_ans == "a":
+            if usr_ans == cmbLastIndex:
                 if len(self.agreedToSeed) == 0:
                     self.seeding = True
                 for i in file_list_temp:
@@ -201,7 +204,7 @@ class Leacher():
                     print(f"Seeding {file_name}")
                 if self.seeding:
                     self.seeding = True
-                    if usr_ans == "a":
+                    if usr_ans == cmbLastIndex:
                         return True,"all files"
                     return True,file_name
                 else:            

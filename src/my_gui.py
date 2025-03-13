@@ -1,9 +1,16 @@
+import threading
+import time
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QInputDialog
     
 class Ui_MainWindow(object):
     peer = ""
+    def __init__(self):
+        self.last_height = 0
+        self.wdgt_list =[]
+    
     def setupUi(self, MainWindow):
+        
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1032, 635)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -44,13 +51,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        self.wdgt_file = QtWidgets.QWidget(self.frame)
-        self.pgr_file = QtWidgets.QProgressBar(self.wdgt_file)
-        self.lbl_filename = QtWidgets.QLabel(self.wdgt_file)
-        self.lbl_numSeed = QtWidgets.QLabel(self.wdgt_file)
-        self.lbl_numLeachers = QtWidgets.QLabel(self.wdgt_file)
-        self.lbl_seedImg = QtWidgets.QLabel(self.wdgt_file)
-        self.lbl_LeachImg = QtWidgets.QLabel(self.wdgt_file)
+        
         self.btn_Download.clicked.connect(self.clicked)
 
     def retranslateUi(self, MainWindow):
@@ -84,44 +85,69 @@ class Ui_MainWindow(object):
 
                     self.cmb_fileList.addItem(i)
                     bool = False
-    def add_file_item(self,file_name):
-        
-        self.wdgt_file.setGeometry(QtCore.QRect(40, 10, 750, 50))
-        self.wdgt_file.setAutoFillBackground(True)
-        self.wdgt_file.setObjectName("wdgt_file")
-        
-        self.pgr_file.setGeometry(QtCore.QRect(300, 15, 121, 23))
-        self.pgr_file.setStyleSheet("")
-        self.pgr_file.setProperty("value", 24)
-        self.pgr_file.setInvertedAppearance(False)
-        self.pgr_file.setObjectName("pgr_file")
-        
-        self.lbl_filename.setGeometry(QtCore.QRect(30, 15, 55, 16))
-        self.lbl_filename.setObjectName("lbl_filename")
-        self.lbl_filename.setText(file_name)
-        
-        self.lbl_numSeed.setGeometry(QtCore.QRect(580, 15, 55, 16))
-        self.lbl_numSeed.setObjectName("lbl_numSeed")
-        
-        self.lbl_numLeachers.setGeometry(QtCore.QRect(680, 15, 55, 16))
-        self.lbl_numLeachers.setObjectName("lbl_numLeachers")
-        
-        self.lbl_seedImg.setGeometry(QtCore.QRect(550, 10, 21, 20))
-        self.lbl_seedImg.setText("")
-        self.lbl_seedImg.setPixmap(QtGui.QPixmap("../../CSC3002F - Assignment 1/LMKtorrent/src/assets/frame0/image_5.png"))
-        self.lbl_seedImg.setScaledContents(True)
-        self.lbl_seedImg.setObjectName("lbl_seedImg")
-        
-        self.lbl_LeachImg.setGeometry(QtCore.QRect(650, 15, 21, 20))
-        self.lbl_LeachImg.setText("")
-        self.lbl_LeachImg.setPixmap(QtGui.QPixmap("../../CSC3002F - Assignment 1/LMKtorrent/src/assets/frame0/image_6.png"))
-        self.lbl_LeachImg.setScaledContents(True)
-        self.lbl_LeachImg.setObjectName("lbl_LeachImg")
-        self.verticalLayout.addWidget(self.frame)
+    def add_file_item(self, file_name):
+        # Create a new widget for the file
+        wdgt_file = QtWidgets.QWidget()
+        wdgt_file.setAutoFillBackground(True)
+        wdgt_file.setObjectName("wdgt_file")
+        wdgt_file.setStyleSheet("background-color: rgb(255, 255, 255);")
+
+        # Create and configure the progress bar
+        pgr_file = QtWidgets.QProgressBar(wdgt_file)
+        pgr_file.setGeometry(QtCore.QRect(300, 15, 121, 23))
+        pgr_file.setStyleSheet("")
+        pgr_file.setProperty("value", 0)
+        pgr_file.setInvertedAppearance(False)
+        pgr_file.setObjectName("pgr_file")
+
+        # Create and configure the filename label
+        lbl_filename = QtWidgets.QLabel(wdgt_file)
+        lbl_filename.setGeometry(QtCore.QRect(30, 15, 55, 16))
+        lbl_filename.setObjectName("lbl_filename")
+        lbl_filename.setText(file_name)
+
+        # Create and configure the number of seeders label
+        lbl_numSeed = QtWidgets.QLabel(wdgt_file)
+        lbl_numSeed.setGeometry(QtCore.QRect(580, 15, 55, 16))
+        lbl_numSeed.setObjectName("lbl_numSeed")
+
+        # Create and configure the number of leechers label
+        lbl_numLeachers = QtWidgets.QLabel(wdgt_file)
+        lbl_numLeachers.setGeometry(QtCore.QRect(680, 15, 55, 16))
+        lbl_numLeachers.setObjectName("lbl_numLeachers")
+
+        # Create and configure the seeder image label
+        lbl_seedImg = QtWidgets.QLabel(wdgt_file)
+        lbl_seedImg.setGeometry(QtCore.QRect(550, 10, 21, 20))
+        lbl_seedImg.setText("")
+        lbl_seedImg.setPixmap(QtGui.QPixmap("../../CSC3002F - Assignment 1/LMKtorrent/src/assets/frame0/image_5.png"))
+        lbl_seedImg.setScaledContents(True)
+        lbl_seedImg.setObjectName("lbl_seedImg")
+
+        # Create and configure the leecher image label
+        lbl_LeachImg = QtWidgets.QLabel(wdgt_file)
+        lbl_LeachImg.setGeometry(QtCore.QRect(650, 15, 21, 20))
+        lbl_LeachImg.setText("")
+        lbl_LeachImg.setPixmap(QtGui.QPixmap("../../CSC3002F - Assignment 1/LMKtorrent/src/assets/frame0/image_6.png"))
+        lbl_LeachImg.setScaledContents(True)
+        lbl_LeachImg.setObjectName("lbl_LeachImg")
+
+        # Add the file widget to the vertical layout
+        self.verticalLayout.addWidget(wdgt_file)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        #threading.Thread(target=self.getProgress,args=(pgr_file,)).start()
     def setPeer(self,peer):
         self.peer = peer
     def clicked(self):
-        
+        file_name = self.cmb_fileList.currentText()
+        self.add_file_item(file_name)
         self.peer.download()
-        return True
+    def getProgress(self,pgr):
+        while True:
+            
+            pgr.setValue(pgr.value() + 1)
+            
+            time.sleep(1)
+
+            if pgr.value() == 100:
+                break

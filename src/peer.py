@@ -69,11 +69,12 @@ class Peer():
         self.isLeacher = False
         if len(sys.argv) > 2:
             self.seeder = Seeder(address, tracker_address, folder_path)
-            
+            self.ui.update_file_list(self.seeder.file_list_uploadable)
             print("seeding")
             self.seeding = True
         else:
             self.leacher = Leacher(tracker_address, folder_path)
+            self.ui.update_file_list(self.leacher.file_list_downloadable)
             self.file_list_downloadable = self.leacher.file_list_downloadable
             self.isLeacher = True
             print(f"Client wont be pinging till it seeds: {self.leacher.address} ")
@@ -96,23 +97,32 @@ class Peer():
                 self.seeding = False
 
              #remeber need to upload leachers filelist and add to be pinged if they agree to being a seeder for a file
-            if self.isLeacher:
-                new_seeder,new_file_name  = self.leacher.download()
-                if new_seeder:
-                    self.reSeeding()
-                    self.seeding = True
+            
+                
                 
             
     def reSeeding(self):
-        self.seeding = True
         address = self.giveLeacherAddress()
         self.seeder= Seeder(address, self.leacher.tracker_address, self.leacher.download_path)
+        
+        
+        
+        self.ui.update_file_list(self.seeder.file_list_uploadable)
+        self.seeding = True
         print(f"{address} is now able to seed ")
     
 
     def giveLeacherAddress(self):
-        address = input("Enter the leacher address and port eg(\"127.0.0.1\" 12500): ").split()
+        address, ok = QInputDialog.getText(None, "Leacher Address", "Enter the leacher address and port (e.g., \"127.0.0.1\" 12500):")
+        address = address.split(" ")
         return (address[0] , int(address[1]))
+    
+    def download(self):
+        new_seeder,new_file_name  = self.leacher.download(self.ui.cmb_fileList)
+        if new_seeder:
+            self.reSeeding()
+            self.seeding = True
+        
 
             
 
