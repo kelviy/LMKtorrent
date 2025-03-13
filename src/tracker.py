@@ -3,10 +3,9 @@
 
 from socket import socket, AF_INET, SOCK_DGRAM
 from datetime import datetime, timedelta
-from packet import Request, File
 import json
 import sys
-import logging
+from packet import Request, File
 
 def main():
     #defaults
@@ -45,6 +44,9 @@ class Tracker():
 
     def start_main_loop(self):
         while True:
+
+
+            #For Mark: Put this in its own thread
             self.remove_inactive()
 
             # potential problem (add_seeder) if file list data is too large (can switch to tcp instead)
@@ -79,7 +81,7 @@ class Tracker():
         match payload[0]:
             case Request.ADD_SEEDER:
                 return self.add_seeder(client_addr, payload[1])
-            case Request.UPLOAD_FILE_LIST:
+            case Request.UPLOAD_FILE_LIST:#upload or update
                 return self.update_file_list(payload[1])
             case Request.REQUEST_SEEDER_LIST:
                 return self.send_seeder_list(client_addr)

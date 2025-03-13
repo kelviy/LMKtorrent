@@ -1,14 +1,15 @@
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
-from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
-from packet import Request, File
-from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import os
 import json
 import struct
 import sys 
+from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
+from concurrent.futures import ThreadPoolExecutor
+from PyQt5.QtWidgets import QInputDialog
+from packet import Request, File
 
 def main():
     #defaults
@@ -59,6 +60,10 @@ class Leacher:
 
         self.address = (None,) #random generated at the moment
         self.max_parallel_seeders = 2
+
+        ## Liams
+        self.agreedToSeed = []
+        self.seeder = ""
         
         self.logger.debug("Leacher contents: " + str(self.__dict__))
 
@@ -68,7 +73,7 @@ class Leacher:
         message = Request.REQUEST_SEEDER_LIST
         tracker_socket = socket(AF_INET, SOCK_DGRAM)
         tracker_socket.sendto(message.encode(), self.tracker_address)
-        list, addr = tracker_socket.recvfrom(1024)
+        list, addr = tracker_socket.recvfrom(1024) 
         seeder_list = json.loads(list.decode())
         print("Obtained Seeder List:", seeder_list)
         self.logger.info("Obtained Seeder List:" + str(seeder_list))
@@ -105,9 +110,22 @@ class Leacher:
             response = soc.recv(1024).decode()
 
             if response == Request.CONNECTED:
+                print(f"Seeder {ip}:{port} is connected")
                 list_seeder_con.append(soc)
 
+                if len(list_seeder_con) >= self.max_parallel_seeders:
+                    break
+            elif response == Request.AWAY:
+                print(f"Seeder {ip}:{port} is away")
+                soc.close()
+        
+        #checks if list is empty
+        if len(list_seeder_con) == 0:
+            print("No Seeders Found. Skipping File")
+            return False
+
         # exits over the limit seeders
+        # this isn't needed
         if len(list_seeder_con) > self.max_parallel_seeders:
             print("Connected:", len(list_seeder_con), "....Closing:", len(list_seeder_con) - self.max_parallel_seeders, "sockets")
             self.logger.debug("Connected %s ...Closing: %s sockets", len(list_seeder_con), len(list_seeder_con) - self.max_parallel_seeders)
@@ -160,8 +178,8 @@ class Leacher:
 
         index = 0
         while index < num_chunks:
-            # recieve hash and file
             
+            # recieve hash and file
             received_header = seeder_soc.recv(struct.calcsize("i32s"))
             file_chunk_size, received_hash = struct.unpack("i32s", received_header)
             file_chunk = Request.myrecvall(seeder_soc, file_chunk_size, File.chunk_size)
@@ -184,5 +202,68 @@ class Leacher:
   
         seeder_soc.close()
 
-if __name__ == "__main__":
-    main()
+
+    def download(self,cmb_fileList):
+        print(f"Files Available Type 'a' for all files:")
+        file_list_temp = list(self.file_list_downloadable.keys())
+        for index, file_name in enumerate(file_list_temp):
+            print(f"{index}: {file_name} for size {self.file_list_downloadable[file_name]}")
+        usr_ans = cmb_fileList.currentIndex()
+        #usr_ans, ok = QInputDialog.getText(None, "Download File", "Enter desired file number separated by spaces (or 'a' for all files):")
+        #usr_ans = input("\nEnter desired file number seperated by spaces:\n")
+        
+        download_files_req = []
+        cmbLastIndex = cmb_fileList.count()-1
+        if usr_ans == cmbLastIndex:
+            download_files_req = range(0, len(file_list_temp))
+        else:
+            download_files_req = str(usr_ans).split(" ")
+        print("Requesting files...")
+        for file_no in download_files_req:
+            self.request_file(file_list_temp[int(file_no)]) 
+        if usr_ans == cmbLastIndex:
+            usr_ans_2, ok = QInputDialog.getText(None, "Download File", "Would you like to seed all files (y/n)")
+       
+            #usr_ans_2 = input(f"Would you like to seed all files (y/n)\n")
+        else:
+            file_name =file_list_temp[int(usr_ans)]
+            usr_ans_2, ok = QInputDialog.getText(None, "Download File", f"Would you like to seed {file_name} (y/n)")
+       
+            #usr_ans_2 = input(f"Would you like to seed {file_name} (y/n)\n")
+        if usr_ans_2 == "y":
+            if usr_ans == cmbLastIndex:
+                if len(self.agreedToSeed) == 0:
+                    self.seeding = True
+                for i in file_list_temp:
+                    file_name = i
+                    file_names = os.listdir(self.download_path)#! leacher needs to download file into data 
+                    file_size = os.path.getsize(self.download_path + file_name)
+                    #self.file_list_uploadable[file_name] = file_size
+                    self.agreedToSeed.append(file_name)
+                    print(f"Seeding {file_name}")
+                if self.seeding:
+                    self.seeding = True
+                    if usr_ans == cmbLastIndex:
+                        return True,"all files"
+                    return True,file_name
+                else:            
+                    return False,file_name
+            else:    
+                file_names = os.listdir(self.download_path)#! leacher needs to download file into data 
+                file_size = os.path.getsize(self.download_path + file_name)
+                #self.file_list_uploadable[file_name] = file_size
+                
+                
+                self.seeding = True
+                    
+                return True,file_name
+                
+        else:
+            if usr_ans =="a":
+                print(f"Not seeding all files")
+                return False,file_name
+            else:
+
+                print(f"Not seeding {file_name}")
+                return False,file_name
+     

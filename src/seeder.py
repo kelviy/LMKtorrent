@@ -208,5 +208,71 @@ class Seeder():
         tracker_socket.close()
         
 
-if __name__ == "__main__":
-    main()
+    def upload(self):
+            
+        #Todo: need to add check for if files are available in seeder, maybe add another element to seederlist or make dic
+            while True:
+                client_socket, client_addr = self.tcp_server_socket.accept()
+                #self.numConSockets-=1
+                # request information will be delimited by "\n"
+                request = client_socket.recv(2048).decode().splitlines()
+                
+
+                match request[0]:
+                    case Request.REQUEST_CONNECTION:
+                        #request = client_socket.recv(2048).decode().splitlines()
+
+                    # match request[0]:
+                           # case Request.WITHIN_LIMIT:
+                                
+
+
+
+
+                                # returns connected or queue back to leecher. 
+                                # connected means that the server will proceed to transfer the file
+                                # queue means that the leecher is in the queue for their request
+
+
+                        with self.state_lock:
+                                    if self.state == Seeder.AVAILBLE_FOR_CONNECTION or self.state == Seeder.CONNECTED:#! added or because of race condition with state
+                                        # encoded json string of a list containing file request info
+                                        # file_name, chunk start, chunk end, chunk size
+                                        self.state = Seeder.CONNECTED
+                                        client_socket.sendall(Request.CONNECTED.encode())
+                                        response = client_socket.recv(2048).decode().splitlines()
+                                        match response[0]:
+                                            case Request.WITHIN_LIMIT:
+                                                client_socket.sendall(Request.CONNECTED.encode())
+                                                print("Within Limit")
+                                                response = client_socket.recv(2048).decode().splitlines()
+                                            case Request.EXIT:
+                                                
+                                                print("Parallel Limit Reached. Closing Connection")
+                                                client_socket.close()
+                                                continue
+                                                
+
+                                        
+                                        if response[0] == Request.REQUEST_FILE_CHUNK:
+                                            # creates a new thread to send the file_part
+                                            # files info list format:
+                                            #  [file_name, num_chunks, send_after]
+                                            file_request_info = json.loads(response[1])
+                                            if file_request_info[0] not in self.file_list_uploadable:
+                                                print("File not in list")
+                                                client_socket.sendall(Request.AWAY.encode())
+                                                client_socket.close()
+                                                continue
+                                            client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
+                                            client_thread.start()
+                                        else:
+                                            # close if client did not acknowledge
+                                            print("Client did not request file chunk. Closing socket")
+                                            self.state = Seeder.AVAILBLE_FOR_CONNECTION
+                                            client_socket.close()
+                                            continue
+                                    else:
+                                        # close if not available
+                                        client_socket.sendall(Request.AWAY.encode())
+                                        client_socket.close()
