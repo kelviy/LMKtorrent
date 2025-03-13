@@ -93,7 +93,7 @@ class Leacher:
         tracker_socket.close()
         return file_list
 
-    def request_file(self, file_name):
+    def request_file(self, file_name, progress_callback=None):
         list_seeder_con = []
 
         # sends request to all potential seeders
@@ -128,14 +128,35 @@ class Leacher:
             with ThreadPoolExecutor(max_workers=self.max_parallel_seeders) as thread_pool:
                 futures = []
 
-                for i in range(len(list_seeder_con)):
-                    futures.append(thread_pool.submit(self.get_file_part, file_name, file_chunk_info_list[i][0], file_chunk_info_list[i][1], list_seeder_con[i] ,file_parts))
+                for i, soc in enumerate(list_seeder_con):
+                    #get seeder info for gui
+                    seeder_info = self.seeder_list[i]
+                    # Use a helper function to capture the current values correctly
+                    def make_callback(i, seeder_info):
+                        return lambda current, total: progress_callback(file_name, i, current, total, tuple(seeder_info)) if progress_callback else None
+                    #Local GUI method
+                    local_progress_callback = local_progress_callback = make_callback(i, seeder_info)
+                    #add to thread pool
+                    futures.append(thread_pool.submit(
+                        self.get_file_part,
+                        file_name,
+                        file_chunk_info_list[i][0],
+                        file_chunk_info_list[i][1],
+                        list_seeder_con[i],
+                        file_parts,
+                        local_progress_callback
+                    ))
 
                 for future in futures:
                     future.result()
 
         else:
-            self.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0],file_parts)
+            #remain single threaded
+            # Single connection case – pass seeder info from the first entry
+            def single_cb(current, total):
+                if progress_callback:
+                    progress_callback(file_name, 0, current, total, tuple(self.seeder_list[0]))
+            self.get_file_part(file_name, file_chunk_info_list[0][0], file_chunk_info_list[0][1], list_seeder_con[0], file_parts, single_cb)
 
         os.makedirs(self.download_path, exist_ok=True)
         file_path = os.path.join(self.download_path, file_name)
@@ -148,7 +169,7 @@ class Leacher:
         self.logger.debug(str(file_name) + " download successfully")
 
             
-    def get_file_part(self, file_name, num_chunks, send_after, seeder_soc, file_parts):
+    def get_file_part(self, file_name, num_chunks, send_after, seeder_soc, file_parts, progress_callback=None):
         request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
         request = request.encode()
 
@@ -174,6 +195,11 @@ class Leacher:
                 self.logger.debug("Chunk " + str(index)+ ": Received " + str(len(file_chunk)) + " and hashes are equal")
                 file_parts[num_chunks_to_skip + index] = file_chunk
                 index += 1
+                
+                #GUI Display
+                if progress_callback:
+                    progress_callback(index, num_chunks)
+
                 seeder_soc.sendall(Request.ACK.encode())
             else:
                 seeder_soc.sendall(Request.NOT_ACK.encode())
