@@ -1,5 +1,4 @@
 #! /bin/bash
-
 if [[ "$1" == "kill" ]]; then
     echo "Killing seeder and tracker"
     kill $(ps -eaf | grep -E "src/tracker.py|src/seeder.py" | grep -v grep | awk '{print $2}')
