@@ -9,24 +9,24 @@ import sys
 import logging
 
 def main():
-    #defaults
+    # Defaults.
     tracker_addr = ("127.0.0.1", 12500)
 
-    # manual input if put something in cli
+    # Manual input if put something in cli.
     if len(sys.argv) == 1:
         print("Using Default arguments: \nTRACKER: (ip: 127.0.0.1, port: 12500)")
     else:
         ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
         tracker_addr = (ip_tracker, int(port_tracker))
 
-    # starts Tracker
+    # Starts tracker.
     local_tracker = Tracker(tracker_addr)
     local_tracker.start_main_loop()
 
 class Tracker():
     def __init__(self, tracker_addr):
 
-        #logging functionality
+        # Logging functionality
         self.logger = File.get_logger("tracker"+str(tracker_addr), "./logs/tracker.log")
 
         self.address = tracker_addr
@@ -47,15 +47,12 @@ class Tracker():
         while True:
             self.remove_inactive()
 
-            # potential problem (add_seeder) if file list data is too large (can switch to tcp instead)
-
-            # receive payload of header and additional information delimited by \n
-            # TODO: add additional tcp connection for file transfer. 
+            # Receive payload of header and additional information delimited by \n.
             payload, client_addr = self.udp_server_socket.recvfrom(1024)
             payload = payload.decode().splitlines()
-            # first element is the header
+            # First element is the header
 
-            #debug info
+            # Debug info.
             print("Connection Received from:", client_addr)
             self.logger.debug("Connection Received from:" + str(client_addr))
             print("Request Message:", payload[0])
@@ -63,9 +60,9 @@ class Tracker():
             print("Payload information:", payload)
             self.logger.debug("Payload information:" + str(payload))
             
-            # send in payload containing header and additional information to exec function
+            # Send in payload containing header and additional information to exec function.
             # exec_request function returns a string containing error if a problem has occured. 
-            # Else return True when request completed correctly.
+            # else return True when request completed correctly.
             exec_info = self.exec_request(payload, client_addr)
             if exec_info == True:
                  self.udp_server_socket.sendto(Request.SUCCESS.encode(), client_addr)
@@ -74,8 +71,8 @@ class Tracker():
                 self.logger.error("Error: " + str(exec_info))
                 self.udp_server_socket.sendto(f"{Request.ERROR}\n{exec_info}".encode(), client_addr)
                  
-          
     def exec_request(self, payload, client_addr):
+        # Execute request received by the tracker found in the first element of the payload.
         match payload[0]:
             case Request.ADD_SEEDER:
                 return self.add_seeder(client_addr, payload[1])
@@ -92,6 +89,7 @@ class Tracker():
                   self.logger.error("Request not recognised: " + str(payload[0]))
 
     def add_seeder(self, client_address, payload):
+        # Adds seeder to the seeder_list along with its last check.
         last_check = datetime.now()
         address = json.loads(payload)
 
@@ -107,6 +105,7 @@ class Tracker():
         return True
 
     def update_file_list(self, payload):
+        # Updates file_list.
         self.file_list = json.loads(payload)
         print("Successfully updated file list")
         self.logger.info("Successfully updated file list")
@@ -114,23 +113,26 @@ class Tracker():
         return True 
 
     def send_seeder_list(self, client_address):
+        # Sends seeder_list to leecher.
         seeder_only_list = []
         for seeder in self.seeder_list:
             seeder_only_list.append(seeder[0])
 
-        # encodes the list of a (list containing ip and port) using json.dumps to string
+        # Encodes the list of a (list containing ip and port) using json.dumps to string.
         self.udp_server_socket.sendto(json.dumps(seeder_only_list).encode(), client_address)
         print("Sent seeder list to:", client_address)
         self.logger.info("Sent seeder list to: " + str(client_address))
         return True
     
     def send_file_list(self, client_address):
+        # Sends file_list to leecher.
         self.udp_server_socket.sendto(json.dumps(self.file_list).encode(), client_address)
         print("Sent File List to:", client_address)
         self.logger.info("Sent File List to: "+ str(client_address))
         return True
 
     def ping_tracker(self, client_addr_udp, client_addr_tcp):
+        # Is invoked when tracker is ping and their last checked is updated.
         client_addr_tcp = json.loads(client_addr_tcp)
         
         for seeder in self.seeder_list:
@@ -143,7 +145,7 @@ class Tracker():
         return "Seeder ID not in found with registed seeders"
     
     def remove_inactive(self):
-        # list comprehension for filtering inactive seeders out (seeders that haven't responded within time_out period)
+        # List comprehension for filtering inactive seeders out (seeders that haven't responded within time_out period).
         self.seeder_list = [seeder for seeder in self.seeder_list if (datetime.now() - seeder[1]) <= self.seeder_time_out]
 
 if __name__ == "__main__":

@@ -11,11 +11,11 @@ import struct
 import sys 
 
 def main():
-    #defaults
+    # Defaults
     tracker_addr = ("127.0.0.1", 12500)
     download_folder = "./tmp/"
 
-    # manual input if put something in cli
+    # Manual input if you put something in cli.
     if len(sys.argv) == 1:
         print("Using Default arguments: \nTRACKER: (ip: 127.0.0.1, port: 12500)\nDownload folder: `./tmp/`")
     else:
@@ -23,11 +23,11 @@ def main():
         tracker_addr = (ip_tracker, int(port_tracker))
         download_folder = input("Enter download folder path (absolute path or relative to running scripts):")
 
-    #start leecher
+    # Start leecher.
     local_leacher = Leacher(tracker_addr, download_folder)
 
 
-    # Choose file download selection
+    # Choose file download selection.
     print(f"Files Available Type 'a' for all files:")
     file_list_temp = list(local_leacher.file_list.keys())
     for index, file_name in enumerate(file_list_temp):
@@ -35,36 +35,38 @@ def main():
 
     usr_ans = input("\nEnter desired file number seperated by spaces:\n")
 
-    # build download list
+    # Build download list.
     download_files_req = []
     if usr_ans.lower() == 'a':
         download_files_req = range(0, len(file_list_temp))
     else:
         download_files_req = usr_ans.split(" ")
 
-    # download files
+    # Download files.
     for file_no in download_files_req:
         local_leacher.request_file(file_list_temp[int(file_no)]) 
 
 
 class Leacher:
     def __init__(self, tracker_addr, download_path):
-        #logging functionality
+        # Logging functionality
         self.logger = File.get_logger("leacher", "./logs/leacher.log")
 
         self.tracker_address = tracker_addr
         self.download_path = download_path
-        self.seeder_list = self.get_seeder_list()  #stores a seeder_list
-        self.file_list = self.get_file_list()    #stores a dictionery of file_list
+        # Stores a seeder_list.
+        self.seeder_list = self.get_seeder_list()
+        # Stores a dictionery of file_list.
+        self.file_list = self.get_file_list()
 
-        self.address = (None,) #random generated at the moment
+        # Random, generated at the moment.
+        self.address = (None,)
         self.max_parallel_seeders = 2
         
         self.logger.debug("Leacher contents: " + str(self.__dict__))
 
-
-
     def get_seeder_list(self):
+        # Retrieves the seeder_list from the tracker.
         message = Request.REQUEST_SEEDER_LIST
         tracker_socket = socket(AF_INET, SOCK_DGRAM)
         tracker_socket.sendto(message.encode(), self.tracker_address)
@@ -78,8 +80,8 @@ class Leacher:
         tracker_socket.close()
         return seeder_list
 
-
     def get_file_list(self):
+        # Retrieves the file_list from the tracker.
         message = Request.REQUEST_FILE_LIST
         tracker_socket = socket(AF_INET, SOCK_DGRAM)
         tracker_socket.sendto(message.encode(), self.tracker_address)
@@ -107,7 +109,7 @@ class Leacher:
             if response == Request.CONNECTED:
                 list_seeder_con.append(soc)
 
-        # exits over the limit seeders
+        # Exits over the limit seeders.
         if len(list_seeder_con) > self.max_parallel_seeders:
             print("Connected:", len(list_seeder_con), "....Closing:", len(list_seeder_con) - self.max_parallel_seeders, "sockets")
             self.logger.debug("Connected %s ...Closing: %s sockets", len(list_seeder_con), len(list_seeder_con) - self.max_parallel_seeders)
@@ -116,10 +118,11 @@ class Leacher:
                 soc.sendall(Request.EXIT_CONNECTION.encode())
                 soc.close()
 
-        #calculate file chunk info
+        # Calculate file chunk info.
         file_size = self.file_list[file_name]
-        #get num_chunks for file total
-        # file_chunk_info_list returns a list containing file_chunk information to send to each seeder
+
+        # Get num_chunks for file total
+        # file_chunk_info_list returns a list containing file_chunk information to send to each seeder.
         num_chunks, file_chunk_info_list = File.get_file_send_rule(file_size, len(list_seeder_con))
 
         file_parts = [None]*num_chunks
@@ -129,14 +132,14 @@ class Leacher:
                 futures = []
 
                 for i, soc in enumerate(list_seeder_con):
-                    #get seeder info for gui
+                    # Get seeder info for GUI.
                     seeder_info = self.seeder_list[i]
-                    # Use a helper function to capture the current values correctly
+                    # Use a helper function to capture the current values correctly.
                     def make_callback(i, seeder_info):
                         return lambda current, total: progress_callback(file_name, i, current, total, tuple(seeder_info)) if progress_callback else None
-                    #Local GUI method
+                    # Local GUI method.
                     local_progress_callback = local_progress_callback = make_callback(i, seeder_info)
-                    #add to thread pool
+                    # Add to thread_pool.
                     futures.append(thread_pool.submit(
                         self.get_file_part,
                         file_name,
@@ -149,10 +152,9 @@ class Leacher:
 
                 for future in futures:
                     future.result()
-
         else:
-            #remain single threaded
-            # Single connection case – pass seeder info from the first entry
+            # Remain single threaded.
+            # Single connection case – pass seeder info from the first entry.
             def single_cb(current, total):
                 if progress_callback:
                     progress_callback(file_name, 0, current, total, tuple(self.seeder_list[0]))
@@ -168,26 +170,26 @@ class Leacher:
         print(file_name + " downloaded succesfully!")
         self.logger.debug(str(file_name) + " download successfully")
 
-            
     def get_file_part(self, file_name, num_chunks, send_after, seeder_soc, file_parts, progress_callback=None):
+        # Retrieve a certain range of file chunks from a seeder from a certain starting point (send_after) of the file.
         request = Request.REQUEST_FILE_CHUNK + "\n" + json.dumps([file_name, num_chunks, send_after])
         request = request.encode()
 
-        #send_after/File.chunk_size will be a whole number.
-        #As send_after = File.chunk_size*num_chunks
+        # send_after/File.chunk_size will be a whole number.
+        # send_after = File.chunk_size*num_chunks
         num_chunks_to_skip = send_after//File.chunk_size
 
         seeder_soc.sendall(request)
 
         index = 0
         while index < num_chunks:
-            # recieve hash and file
+            # Receive hash and file.
             
             received_header = seeder_soc.recv(struct.calcsize("i32s"))
             file_chunk_size, received_hash = struct.unpack("i32s", received_header)
             file_chunk = Request.myrecvall(seeder_soc, file_chunk_size, File.chunk_size)
 
-            # computer and equate hashes
+            # Computes and equates hashes.
             file_hash = hashlib.sha256(file_chunk).digest()
 
             if file_hash == received_hash:
