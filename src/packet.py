@@ -63,17 +63,12 @@ class Request():
     UPLOAD_FILE_LIST = 'upload_file_list'
     # Sent by leecher to request file list
     REQUEST_FILE_LIST = 'request_file_list'
-    #Approximately every 5 minutes, the seeder will send the tracker a notify_tracker message to indicate that they are still active.
-    # (not used at the moment) Sent from (1)tracker -> seeder / (2)leacher -> tracker that TCP server is ready to receive
-    TCP_PERMIT = "tcp_permit"
 
     ## SEEDER
     #Sent from seeder to leecher when a successful connection has been established.
     CONNECTED = "connected"
     # Sent from seeder to leecher to indicate that it cannot connect at the moment
     AWAY = 'away'
-    # (not used at the moment) Sent from seeder to leacher to inform that the seeder has put the leecher in a queue
-    QUEUE = 'queue'
 
     ## LEECHER
     #Used by leacher to ask for connection to seeder
