@@ -7,29 +7,28 @@ from seeder import Seeder
 import os
 
 def main():
-    #1. input seeder and tracker details (have to start beforehand) - can be done with `auto_run.sh` and killed with `auto_run.sh kill`
-    #2. start gui
-    #3. ask where to store files
-    #4. download
-    #5. Ask to seed
+    # 1. Input seeder and tracker details (have to start beforehand) - can be done with `auto_run.sh` and killed with `auto_run.sh kill`.
+    # 2. Start gui.
+    # 3. Ssk where to store files.
+    # 4. Download.
+    # 5. Ask to seed.
 
-    #defaults
+    # Defaults
     tracker_addr = ("127.0.0.1", 12500)
 
-    # cli GUI for now
-    # manual input if put something in cli
+    # cli GUI for now.
+    # Manual input if put something in cli.
     if len(sys.argv) == 1:
         print("Using Default arguments: \nTRACKER: (ip: 127.0.0.1, port: 12500)")
     else:
         ip_tracker, port_tracker = (input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")).split(" ")
         tracker_addr = (ip_tracker, int(port_tracker))
 
-    # start
-    # default folder of ./tmp/
+    # Start
+    # Default folder of ./tmp/.
     local_peer = Peer(tracker_addr,'./tmp/')
     local_peer.download_files()
     local_peer.start_main_loop()
-
 
 class Peer:
     LEECHER = 'leecher'
@@ -56,9 +55,8 @@ class Peer:
         self.seeder = None
         self.state = Peer.LEECHER
 
-
     def start_main_loop(self):
-        # called after download file is done
+        # Called after download file is done.
 
         while True:
             print(Peer.MENU)
@@ -76,15 +74,13 @@ class Peer:
                             addr = (usr_ip, int(port))
 
                         self.change_to_seeder(addr)
-                        # will not stop. Need to exit whole program to stop
+                        # Will not stop. Need to exit whole program to stop.
                         self.seeder.start_main_loop()
                     else:
                         print("You need to download all files")
-                # case "3":
-                #     self.change_download_folder()
+
                 case "q":
                     break
-
 
     def change_to_seeder(self, addr):
         if (self.state == Peer.SEEDER):
@@ -93,8 +89,7 @@ class Peer:
         self.seeder = Seeder(addr, self.leecher.tracker_address, self.leecher.download_path)
 
     def download_files(self):        
-        # Choose file download selection
-        #cli gui for now
+        # Choose file download selection.
         print(f"Files Available Type 'a' for all files:")
         file_list_temp = list(self.leecher.file_list.keys())
         for index, file_name in enumerate(file_list_temp):
@@ -102,14 +97,14 @@ class Peer:
 
         usr_ans = input("\nEnter desired file number seperated by spaces:\n")
 
-        # build download list
+        # Build download list
         download_files_req = []
         if usr_ans.lower() == 'a':
             download_files_req = range(0, len(file_list_temp))
         else:
             download_files_req = usr_ans.split(" ")
 
-        # download files
+        # Download files.
         for file_no in download_files_req:
             self.leecher.request_file(file_list_temp[int(file_no)]) 
 

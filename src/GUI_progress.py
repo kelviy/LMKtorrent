@@ -18,7 +18,8 @@ from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
 
 def main():
     app = QApplication(sys.argv)
-    #defaults
+
+    # Defaults
     tracker_addr = ("127.0.0.1", 12500)
     seeder_reference = []
 
@@ -33,32 +34,31 @@ def main():
 
     seeder_reference[0].start_main_loop()
 
-
-# --- Custom Widget to display download progress for a single file download instance ---
+# Custom Widget to display download progress for a single file download instance.
 class FileDownloadWidget(QWidget):
     def __init__(self, file_name, download_id):
         super().__init__()
         self.file_name = file_name
         self.download_id = download_id
-        # Stores per-connection progress: connection_index -> (current, total, seeder_info)
+        # Stores per-connection progress: connection_index -> (current, total, seeder_info).
         self.sub_progress = {}
-        # Stores sub-widget components: connection_index -> (QLabel, QProgressBar)
+        # Stores sub-widget components: connection_index -> (QLabel, QProgressBar).
         self.sub_widgets = {}
         
         main_layout = QVBoxLayout()
-        # Label showing download index, file name and cumulative progress
+        # Label showing download index, file name and cumulative progress.
         self.file_label = QLabel(f"Download #{download_id}: {file_name} - 0% complete")
         main_layout.addWidget(self.file_label)
-        # Cumulative progress bar
+        # Cumulative progress bar.
         self.cumulative_bar = QProgressBar()
         self.cumulative_bar.setMinimum(0)
         self.cumulative_bar.setMaximum(100)
         main_layout.addWidget(self.cumulative_bar)
         
-        # Container for sub progress bars (each representing a seeder connection)
+        # Container for sub progress bars (each representing a seeder connection).
         self.sub_container = QVBoxLayout()
         frame = QFrame()
-        # Use PyQt6 enums: QFrame.Shape.Box and QFrame.Shadow.Raised
+        # Use PyQt6 enums: QFrame.Shape.Box and QFrame.Shadow.Raised.
         frame.setFrameStyle(QFrame.Shape.Box | QFrame.Shadow.Raised)
         frame.setLayout(self.sub_container)
         main_layout.addWidget(frame)
@@ -66,9 +66,9 @@ class FileDownloadWidget(QWidget):
         self.setLayout(main_layout)
     
     def update_progress(self, connection_index, current, total, seeder_info):
-        # Save progress for this connection
+        # Save progress for this connection.
         self.sub_progress[connection_index] = (current, total, seeder_info)
-        # Create sub-widget if it doesn't already exist
+        # Create sub-widget if it doesn't already exist.
         if connection_index not in self.sub_widgets:
             sub_widget = QWidget()
             sub_layout = QHBoxLayout()
@@ -82,11 +82,11 @@ class FileDownloadWidget(QWidget):
             sub_layout.addWidget(progress_bar)
             self.sub_container.addWidget(sub_widget)
             self.sub_widgets[connection_index] = (label, progress_bar)
-        # Update the sub progress bar for this connection
+        # Update the sub progress bar for this connection.
         label, progress_bar = self.sub_widgets[connection_index]
         sub_percent = int((current / total) * 100) if total > 0 else 0
         progress_bar.setValue(sub_percent)
-        # Compute cumulative progress over all seeder connections
+        # Compute cumulative progress over all seeder connections.
         total_current = sum(val[0] for val in self.sub_progress.values())
         total_total = sum(val[1] for val in self.sub_progress.values())
         cumulative = int((total_current / total_total) * 100) if total_total > 0 else 0
@@ -96,12 +96,11 @@ class FileDownloadWidget(QWidget):
     def mark_complete(self):
         self.file_label.setText(f"Download #{self.download_id}: {self.file_name} - Download Complete")
 
-
-# --- Worker thread to download a single file ---
+# Worker thread to download a single file
 class DownloadWorker(QThread):
     # Signal: file_name, connection_index, current, total, seeder_info, download_id
     progressChanged = pyqtSignal(str, int, int, int, tuple, int)
-    # Signal when a file is finished: file_name, download_id
+    # Signal when a file is finished: file_name, download_id.
     downloadFinished = pyqtSignal(str, int)
     
     def __init__(self, peer, file_name, download_id, parent=None):
@@ -122,26 +121,31 @@ class DownloadWorker(QThread):
             print("Error in DownloadWorker:", e)
             traceback.print_exc()
 
-
-# --- Main Window ---
+# Main Window
 class MainWindow(QMainWindow):
     def __init__(self, addr, seeder_reference):
         super().__init__()
         self.setWindowTitle("File Downloader GUI")
         self.resize(900, 700)
-        self.peer = None  # Will be initialized in init_peer
-        # Default tracker address
+        # Will be initialized in init_peer.
+        self.peer = None
+        # Default tracker address.
         self.tracker_addr = addr
-        # For sequential downloads (Download All Files)
-        self.sequential_queue = []  # List of file names (in order)
-        self.current_worker = None  # For sequential mode
-        # Mapping from unique download_id to its FileDownloadWidget
-        self.download_widgets = {}
-        # Mapping from unique download_id to its DownloadWorker
-        self.download_workers = {}
-        self.download_counter = 0  # Unique download ID counter
+        # For sequential downloads (download all files).
 
-        # Set up main layout
+        # List of file names (in order).
+        self.sequential_queue = []
+        # For sequential mode.
+        self.current_worker = None
+
+        # Mapping from unique download_id to its FileDownloadWidget.
+        self.download_widgets = {}
+        # Mapping from unique download_id to its DownloadWorker.
+        self.download_workers = {}
+        # Unique download ID counter
+        self.download_counter = 0
+
+        # Set up main layout.
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         self.main_layout = QVBoxLayout()
@@ -154,7 +158,8 @@ class MainWindow(QMainWindow):
         self.folder_button = QPushButton("Select Download Folder")
         self.folder_button.clicked.connect(self.select_folder)
         top_layout.addWidget(self.folder_button)
-        # New Change Tracker button
+
+        # Change Tracker button
         self.change_tracker_button = QPushButton("Change Tracker")
         self.change_tracker_button.clicked.connect(self.change_tracker)
         top_layout.addWidget(self.change_tracker_button)
@@ -177,8 +182,6 @@ class MainWindow(QMainWindow):
         self.download_button.clicked.connect(self.download_selected_files)
         self.main_layout.addWidget(self.download_button)
 
-        
-        
         # Scroll area for file download widgets (progress list that sticks to the bottom)
         self.progress_area = QScrollArea()
         self.progress_area_widget = QWidget()
@@ -191,28 +194,26 @@ class MainWindow(QMainWindow):
         self.init_peer("./tmp/")
         self.load_file_list()
 
-        #for reference seederlist back to main function
+        # For reference seederlist back to main function.
         self.seeder_reference = seeder_reference
 
-        
     def seed_all_files(self):
         if self.peer.check_all_files():
             addr, ok = QInputDialog.getText(self, "Seeding", 
-                                               "Enter Seeding IP and Port (ex: 127.0.0.1 12500):")
+                                            "Enter Seeding IP and Port (ex: 127.0.0.1 12500):")
             addr = addr.split()
             if ok:
                 print("seeding")
                 self.peer.change_to_seeder((addr[0],int(addr[1])))
                 self.seeder_reference.append(self.peer.seeder)
-                # will not stop. Need to exit whole program to stop
-                #self.peer.seeder.start_main_loop()
+                # Will not stop. Need to exit whole program to stop
+
                 msg_box = QMessageBox()
                 msg_box.setWindowTitle("Seeding")
                 msg_box.setText("Seeder started. Switching to terminal")
                 msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
                 msg_box.exec()
                 self.close()
-
 
         else:
             msg_box = QMessageBox()
@@ -221,10 +222,8 @@ class MainWindow(QMainWindow):
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.exec()
             
-
-    
     def init_peer(self, download_folder):
-        # Initialize Peer with the current tracker address
+        # Initialize Peer with the current tracker address.
         self.peer = Peer(self.tracker_addr, download_folder)
     
     def select_folder(self):
@@ -234,7 +233,7 @@ class MainWindow(QMainWindow):
             self.load_file_list()
     
     def change_tracker(self):
-        # Show an input dialog to change tracker
+        # Show an input dialog to change tracker.
         tracker_str, ok = QInputDialog.getText(self, "Change Tracker", 
                                                "Enter Tracker IP and Port (ex: 127.0.0.1 12500):")
         if ok and tracker_str:
@@ -244,9 +243,11 @@ class MainWindow(QMainWindow):
                 try:
                     port = int(parts[1].strip())
                 except ValueError:
-                    return  # Optionally show an error message here
+                    # Optionally show an error message here
+                    return
                 self.tracker_addr = (ip, port)
                 self.tracker_label.setText(f"Tracker: {ip}:{port}")
+
                 # Reinitialize peer with the new tracker using the current download folder.
                 folder = self.peer.leecher.download_path if self.peer else "./tmp/"
                 self.init_peer(folder)
@@ -262,13 +263,13 @@ class MainWindow(QMainWindow):
         selected_items = self.file_list_widget.selectedItems()
         if not selected_items:
             return
-        # Start downloads concurrently for each selected file
+        # Start downloads concurrently for each selected file.
         for item in selected_items:
             file_name = item.text().split(" (")[0]
             self.start_file_download(file_name, sequential=False)
     
     def download_all_files(self):
-        # Build sequential queue (top-to-bottom based on file list order)
+        # Build sequential queue (top-to-bottom based on file list order).
         self.sequential_queue = []
         for index in range(self.file_list_widget.count()):
             item = self.file_list_widget.item(index)
@@ -285,7 +286,7 @@ class MainWindow(QMainWindow):
             self.download_all_button.setEnabled(True)
     
     def start_file_download(self, file_name, sequential=False):
-        # Increment counter to get a unique download ID
+        # Increment counter to get a unique download ID.
         self.download_counter += 1
         download_id = self.download_counter
         
@@ -328,7 +329,6 @@ class MainWindow(QMainWindow):
             worker.quit()
             worker.wait()
         event.accept()
-
 
 if __name__ == "__main__":
     main()
