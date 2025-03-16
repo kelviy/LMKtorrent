@@ -1,6 +1,12 @@
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
+"""
+Runs the tracker
+Acts as a UDP server with simple receive, process request and send back info loop
+Acts as a source of meta data information for leecher and seeder to get and upload information to
+"""
+
 from socket import socket, AF_INET, SOCK_DGRAM
 from datetime import datetime, timedelta
 import json, sys

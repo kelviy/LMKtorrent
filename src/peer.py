@@ -5,6 +5,11 @@ import sys, os
 from leacher import Leacher
 from seeder import Seeder
 
+"""
+Combines the leecher and seeder, so a leecher can convert to the seeder
+Includes methods that help the GUI work and display information
+"""
+
 def main():
     # 1. Input seeder and tracker details (have to start beforehand) - can be done with `auto_run.sh` and killed with `auto_run.sh kill`.
     # 2. Start gui.

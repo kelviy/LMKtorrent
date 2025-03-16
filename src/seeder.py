@@ -6,6 +6,12 @@ from datetime import timedelta, datetime
 import threading, hashlib, json, os, time, struct, sys
 from packet import Request, File
 
+"""
+Seeder will send files chunks to the leecher when requested
+Seeder has states and depending on state will accept or reject connection
+Seeder will send a hash for file chunk verification
+"""
+
 def main():
     # Defaults.
     folder_path = "./data/"

@@ -1,6 +1,11 @@
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
+"""
+Leecher gets metadata from the tracker and downloads files from the seeder
+Leecher support parallel downloading from multiple seeders
+"""
+
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from concurrent.futures import ThreadPoolExecutor
 import hashlib, os, json, struct, sys

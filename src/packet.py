@@ -1,9 +1,17 @@
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
+"""
+Contains code that mode other scripts/class use in the program
+"""
+
 from socket import socket
 import math, logging
 
+"""
+File holds information on chunk size and how file chunk information is calculated.
+Also contains method for logging
+"""
 class File():
     #Class which represents the file entity and a method to generate a send rule for a particular file, given its size and the number of seeders available.
 
@@ -48,6 +56,10 @@ class File():
 
         return logger
     
+"""
+Mostly contains messages that other classes use to send receive
+Contains a method to recv all (if message size is known)
+"""
 class Request():
     # Information is sent in a string delimited by \n.
 
