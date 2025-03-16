@@ -73,6 +73,7 @@ class Seeder():
         self.logger.debug("Seeder contents: " + str(self.__dict__))
 
     def start_main_loop(self):
+        print("------Seeder Loop Started--------")
         self.state = Seeder.AVAILBLE_FOR_CONNECTION
 
         while True:
