@@ -10,7 +10,6 @@ import os
 import time
 import struct
 import sys
-import logging
 from packet import Request, File
 
 def main():

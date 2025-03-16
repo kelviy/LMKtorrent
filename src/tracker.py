@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from packet import Request, File
 import json
 import sys
-import logging
 
 def main():
     # Defaults.
