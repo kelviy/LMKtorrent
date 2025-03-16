@@ -15,7 +15,7 @@ To change these parameters add a random command line argument and the script wil
 
 E.g: `python3 seeder.py adsf`
 
-> NOTE: Typing in nothing for manual input for seeder.py and tracker.py will not default to defualt option - it will crash. This is only on GUI for typing in tracker. 
+> NOTE: Typing in nothing during manual input prompts for seeder.py and tracker.py will not default to defualt option - it will crash. This is only on GUI for typing in tracker. 
 
 > NOTE: There is also a CLI GUI provided in peer.py (very barebones)
 
