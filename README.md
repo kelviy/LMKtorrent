@@ -30,7 +30,7 @@ E.g: `python3 seeder.py adsf`
 
 # OVERVIEW
 LEACHER 
-1. UDP file list info from tracker
+1. File list information received via UDP from tracker
 2. Leacher gets a list potential active seeders from tracker (UDP)
 3. Leacher initiates a connection with multiple seeders. Effectively blocking other leachers from connecting to the seeder. Has a max parallel connection number setting
 4. Once all seeders or up till desired seeders (predetermined fixed amount) is connected:
@@ -44,12 +44,17 @@ SEEDER
 1. Has 3 states to send to leacher (states names are currently outdated. Need to update)
     1. Available    (sent if not occupied)
     2. Connected    (sent to connected leecher)
-    3. Unavailable  (sent if connected and another leecher requests download)
+    3. Away  (sent if connected and another leecher requests download)
 2. One Thread to listen for connections and send a response on state 
 3. Another thread should also sends pings to tracker
 4. Another thread to send file chunk to leechers (single / fixed size threads)
 
 Note: Currently no queue system available for seeder
+
+PEER
+1. Starts as a Leecher and follows steps 1-5.
+2. Can transition to Seeder once all available files are downloaded
+3. Once a Seeder the Gui closes and terminal is open.
 
 TRACKER 
 1. Be single threaded program
