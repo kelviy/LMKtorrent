@@ -9,8 +9,8 @@ import os
 def main():
     # 1. Input seeder and tracker details (have to start beforehand) - can be done with `auto_run.sh` and killed with `auto_run.sh kill`.
     # 2. Start gui.
-    # 3. Ssk where to store files.
-    # 4. Download.
+    # 3. Ask for Tracker Details.
+    # 4. Download Loop.
     # 5. Ask to seed.
 
     # Defaults

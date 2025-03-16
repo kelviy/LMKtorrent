@@ -59,9 +59,8 @@ class Leacher:
         # Stores a dictionery of file_list.
         self.file_list = self.get_file_list()
 
-        # Random, generated at the moment.
-        self.address = (None,)
-        self.max_parallel_seeders = 2
+        self.address = (None,) #random generated at the moment
+        self.max_parallel_seeders = 5
         
         self.logger.debug("Leacher contents: " + str(self.__dict__))
 
@@ -96,6 +95,9 @@ class Leacher:
         return file_list
 
     def request_file(self, file_name, progress_callback=None):
+        #refresh seeders
+        self.get_seeder_list()
+
         list_seeder_con = []
 
         # sends request to all potential seeders

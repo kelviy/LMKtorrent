@@ -2,10 +2,10 @@
 CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 March 2025
 
 # PROPOSED OVERVIEW
-LEACHER \
-1. TCP file list info from tracker
-2. Leacher gets a list potential active seeders from tracker
-3. Leacher initiates a connection with multiple seeders. Effectively blocking other leachers from connecting to the seeder
+LEACHER 
+1. UDP file list info from tracker
+2. Leacher gets a list potential active seeders from tracker (UDP)
+3. Leacher initiates a connection with multiple seeders. Effectively blocking other leachers from connecting to the seeder. Has a max parallel connection number setting
 4. Once all seeders or up till desired seeders (predetermined fixed amount) is connected:
     1. Calculate the file chunks needed from each seeder
     2. Request and Download file chunks (hashing and resending here) + (parallel downloading on different threads)
@@ -13,7 +13,7 @@ LEACHER \
 5. Now a single file is downloaded. Repeat from step 1 or 2 for each requested file
 * allows not only one leecher to hog all the resources at once (prob implement a new queue request for better implementation)
 
-SEEDER \
+SEEDER 
 1. Has 3 states to send to leacher (states names are currently outdated. Need to update)
     1. Available    (sent if not occupied)
     2. Connected    (sent to connected leecher)
@@ -23,10 +23,9 @@ SEEDER \
 4. Another thread to send file chunk to leechers (single / fixed size threads)
 
 Note: Currently no queue system available for seeder
-Note: Selecter in progress for faster multithreading
 
 TRACKER 
 1. Be single threaded program
 2. UDP Requests are only a single receive, execute and send cycle
 
-Note: File_Name size list limitation can be solved by implementing -> sent and received over another TCP connection
+Note: Have a File_Name size list limitation and can be solved by implementing sending and receiving over another TCP connection (more complex)

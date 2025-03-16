@@ -1,7 +1,7 @@
 #! /bin/bash
 if [[ "$1" == "kill" ]]; then
     echo "Killing seeder and tracker"
-    kill $(ps -eaf | grep -E "src/tracker.py|src/seeder.py" | grep -v grep | awk '{print $2}')
+    kill $(ps -eaf | grep -E "src/tracker.py|src/seeder.py|GUI_progress.py" | grep -v grep | awk '{print $2}')
 else
     echo "Running seeder and tracker and leacher"
     python3 src/tracker.py &

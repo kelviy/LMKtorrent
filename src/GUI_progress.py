@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog, QMessageBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
+from peer import Peer  # Using the modified Peer class from CLI_GUI.py
 
 def main():
     app = QApplication(sys.argv)
