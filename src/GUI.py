@@ -28,7 +28,7 @@ def main():
     usr_ans = input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")
     if usr_ans != "":
         usr_ans = usr_ans.split(" ")
-        tracker_addr = (usr_ans[0], int(usr_ans))
+        tracker_addr = (usr_ans[0], int(usr_ans[1]))
     
     window = MainWindow(tracker_addr, seeder_reference)
     window.show()
