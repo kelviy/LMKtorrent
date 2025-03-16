@@ -46,4 +46,4 @@ TRACKER
 1. Be single threaded program
 2. UDP Requests are only a single receive, execute and send cycle
 
-Note: Have a File_Name size list limitation and can be solved by implementing sending and receiving over another TCP connection (more complex)
+Note: Potential (file_name+size) list limitation and can be solved by implementing sending and receiving over another TCP connection (more complex)
