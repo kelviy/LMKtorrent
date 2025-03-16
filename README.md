@@ -1,7 +1,25 @@
 # LMKtorrent
 CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 March 2025
 
-# PROPOSED OVERVIEW
+# QUICK RUN
+1. Create a virtual environment and install PyQt6 for GUI
+2. Run auto_run.sh script. This will start seeder and tracker instances on loop back interface (127.0.0.1) on port 12500 nd 12501 respectively. Seeder will default to seeding ./data/ folder
+3. Run GUI and type in tracker information. Typing in nothing will default to 127.0.0.1:12500
+4. You are now able to download files. By default it will download to ./tmp/ folder
+
+# Manual Run
+
+Running seeder.py or tracker.py with no command line argument will start the script with default parameters. 
+
+To change these parameters add a random command line argument and the script will prompt for required information. 
+
+E.g: `python3 seeder.py adsf`
+
+> NOTE: Typing in nothing for manual input for seeder.py and tracker.py will not default to defualt option - it will crash. This is only on GUI for typing in tracker. 
+
+> NOTE: There is also a CLI GUI provided in peer.py (very barebones)
+
+# OVERVIEW
 LEACHER 
 1. UDP file list info from tracker
 2. Leacher gets a list potential active seeders from tracker (UDP)
