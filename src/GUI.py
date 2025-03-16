@@ -21,6 +21,7 @@ def main():
 
     # Defaults
     tracker_addr = ("127.0.0.1", 12500)
+    #maintains a reference on seeder for when you exit gui
     seeder_reference = []
 
     # first have to input tracker ip and port
@@ -33,7 +34,8 @@ def main():
     window.show()
     app.exec()
 
-    seeder_reference[0].start_main_loop()
+    if seeder_reference:
+        seeder_reference[0].start_main_loop()
 
 # Custom Widget to display download progress for a single file download instance.
 class FileDownloadWidget(QWidget):
