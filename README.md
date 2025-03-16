@@ -6,6 +6,9 @@ CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 Ma
 2. Run auto_run.sh script. This will start seeder and tracker instances on loop back interface (127.0.0.1) on port 12500 nd 12501 respectively. Seeder will default to seeding ./data/ folder
 3. Run GUI and type in tracker information. Typing in nothing will default to 127.0.0.1:12500
 4. You are now able to download files. By default it will download to ./tmp/ folder
+5. Seeder Convertion will only occur when all files are downloaded into tmp folder. 
+
+> NOTE: The GUI will exit after confirmation of Switching to Seeder on Terminal. There is no way to go return. Do a rerun of GUI.py to download again.
 
 # Manual Run
 
