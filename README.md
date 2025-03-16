@@ -1,5 +1,11 @@
 # LMKtorrent
-CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due 17 March 2025
+CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due on 17 March 2025.
+
+**Group Members**
+- Kelvin Wei (WXXKEL001)
+- Liam de Saldanha (DSLLIA002)
+- Mark du Preez (DPRMAR021)
+ ---
 
 # QUICK RUN
 1. Create a virtual environment and install PyQt6 for GUI
