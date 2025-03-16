@@ -1,28 +1,30 @@
-#!/usr/bin/env python3
-# gui_gui.py
-# CSC3002F Group Assignment 2025 - GUI Version
-# This script creates a PyQt GUI to download files sequentially.
-# Each file’s download widget shows a main cumulative progress bar along with
-# sub progress bars for each seeder connection (including seeder IP/port info).
-#
+# CSC3002F Group Assignment 2025
 # Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
-from operator import add
-import sys, os, traceback
+
+"""
+GUI application for downloading from Seeder 
+Running and visualizing the downloading progress
+Converting to Seeder when requested
+"""
+
+import sys, traceback
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
     QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog, QMessageBox
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from CLI_GUI import Peer  # Using the modified Peer class from CLI_GUI.py
+from PyQt6.QtCore import QThread, pyqtSignal
+from peer import Peer  # Using the modified Peer class from CLI_GUI.py
 
 def main():
     app = QApplication(sys.argv)
 
     # Defaults
     tracker_addr = ("127.0.0.1", 12500)
+    #maintains a reference on seeder for when you exit gui
     seeder_reference = []
 
+    # first have to input tracker ip and port
     usr_ans = input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")
     if usr_ans != "":
         usr_ans = usr_ans.split(" ")
@@ -32,7 +34,8 @@ def main():
     window.show()
     app.exec()
 
-    seeder_reference[0].start_main_loop()
+    if seeder_reference:
+        seeder_reference[0].start_main_loop()
 
 # Custom Widget to display download progress for a single file download instance.
 class FileDownloadWidget(QWidget):

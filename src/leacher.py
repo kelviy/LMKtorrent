@@ -1,14 +1,15 @@
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
+"""
+Leecher gets metadata from the tracker and downloads files from the seeder
+Leecher support parallel downloading from multiple seeders
+"""
+
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
-from packet import Request, File
 from concurrent.futures import ThreadPoolExecutor
-import hashlib
-import os
-import json
-import struct
-import sys 
+import hashlib, os, json, struct, sys
+from packet import Request, File
 
 def main():
     # Defaults
@@ -59,9 +60,8 @@ class Leacher:
         # Stores a dictionery of file_list.
         self.file_list = self.get_file_list()
 
-        # Random, generated at the moment.
-        self.address = (None,)
-        self.max_parallel_seeders = 2
+        self.address = (None,) #random generated at the moment
+        self.max_parallel_seeders = 5
         
         self.logger.debug("Leacher contents: " + str(self.__dict__))
 
@@ -96,6 +96,9 @@ class Leacher:
         return file_list
 
     def request_file(self, file_name, progress_callback=None):
+        #refresh seeders
+        self.get_seeder_list()
+
         list_seeder_con = []
 
         # sends request to all potential seeders
