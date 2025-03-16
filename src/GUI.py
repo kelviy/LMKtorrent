@@ -7,13 +7,12 @@
 #
 # Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
-from operator import add
-import sys, os, traceback
+import sys, traceback
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QListWidget,
     QPushButton, QProgressBar, QLabel, QFileDialog, QScrollArea, QFrame, QInputDialog, QMessageBox
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import QThread, pyqtSignal
 from peer import Peer  # Using the modified Peer class from CLI_GUI.py
 
 def main():
