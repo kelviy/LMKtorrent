@@ -75,43 +75,49 @@ class Seeder():
         print("------Seeder Loop Started--------")
         self.state = Seeder.AVAILBLE_FOR_CONNECTION
 
+        #loop for listening and sending out file chunks
         while True:
             client_socket, client_addr = self.tcp_server_socket.accept()
             # Request information will be delimited by "\n".
             request = client_socket.recv(2048).decode().splitlines()
 
-            match request[0]:
-                case Request.REQUEST_CONNECTION:
-                    # Returns connected or queue back to leecher. 
-                    # Connected means that the server will proceed to transfer the file.
-                    # Queue means that the leecher is in the queue for their request.
-                    with self.state_lock:
-                        if self.state == Seeder.AVAILBLE_FOR_CONNECTION:
-                            # Encoded json string of a list containing file request info.
-                            # file_name, chunk start, chunk end, chunk size
+            # checks and confirms connection
+            # aims to make a new thread for each file chunk sending
+            if request[0] == Request.REQUEST_CONNECTION:
+                # Returns connected or away back to leecher. 
+                # Connected means that the server will proceed to transfer the file.
+                # Away means that the server cannot connect to the leecher at this time
 
-                            self.state = Seeder.CONNECTED
-                            client_socket.sendall(Request.CONNECTED.encode())
-                            response = client_socket.recv(1024).decode().splitlines()
-                            if response[0] == Request.REQUEST_FILE_CHUNK:
-                                # Creates a new thread to send the file_part.
-                                # Files info list format:
-                                #  [file_name, num_chunks, send_after]
+                # lock on seeder state
+                with self.state_lock:
+                    if self.state == Seeder.AVAILBLE_FOR_CONNECTION:
+                        self.state = Seeder.CONNECTED
+                        client_socket.sendall(Request.CONNECTED.encode())
+                        response = client_socket.recv(1024).decode().splitlines()
+                        
+                        if response[0] == Request.REQUEST_FILE_CHUNK:
+                            # Creates a new thread to send the file_part.
+                            # response contains encoded json string of a list containing file request info.
+                            # Files info list format:
+                            #  [file_name, num_chunks, send_after]
 
-                                file_request_info = json.loads(response[1])
-                                client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
-                                client_thread.start()
-                            elif response[0] == Request.EXIT_CONNECTION:
-                                # close if client did not acknowledge
-
-                                print("Client requested to close connection. Closing socket")
-                                self.logger.debug("Client requested to close connection. Closing socket")
-                                self.state = Seeder.AVAILBLE_FOR_CONNECTION
-                                client_socket.close()
-                        else:
-                            # close if not available
-                            client_socket.sendall(Request.AWAY.encode())
+                            file_request_info = json.loads(response[1])
+                            client_thread = threading.Thread(target=self.send_file_part, args=(client_socket, file_request_info))
+                            client_thread.start()
+                        elif response[0] == Request.EXIT_CONNECTION:
+                            # close if client did not acknowledge
+                            print("Client requested to close connection. Closing socket")
+                            self.logger.debug("Client requested to close connection. Closing socket")
+                            self.state = Seeder.AVAILBLE_FOR_CONNECTION
                             client_socket.close()
+                    else:
+                        # close if not available
+                        client_socket.sendall(Request.AWAY.encode())
+                        client_socket.close()
+            else:
+                # Error as unrecognized request
+                client_socket.sendall(Request.ERROR.encode())
+                client_socket.close()
 
     def send_file_part(self, leecher_socket: socket, file_req_info):
         """
@@ -163,6 +169,7 @@ class Seeder():
             print(f"Completed Sending File Chunk of {file_name}")
             self.logger.debug("Completed Sending File Chunk of " + str(file_name))
 
+            #makes the seeder state available again
             with self.state_lock:
                 self.state = Seeder.AVAILBLE_FOR_CONNECTION
         except Exception as e:
