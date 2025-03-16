@@ -3,9 +3,8 @@
 
 from socket import socket, AF_INET, SOCK_DGRAM
 from datetime import datetime, timedelta
+import json, sys
 from packet import Request, File
-import json
-import sys
 
 def main():
     # Defaults.

@@ -2,13 +2,9 @@
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
-from packet import Request, File
 from concurrent.futures import ThreadPoolExecutor
-import hashlib
-import os
-import json
-import struct
-import sys 
+import hashlib, os, json, struct, sys
+from packet import Request, File
 
 def main():
     # Defaults

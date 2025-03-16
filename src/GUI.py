@@ -1,11 +1,12 @@
-#!/usr/bin/env python3
-# gui_gui.py
-# CSC3002F Group Assignment 2025 - GUI Version
-# This script creates a PyQt GUI to download files sequentially.
-# Each file’s download widget shows a main cumulative progress bar along with
-# sub progress bars for each seeder connection (including seeder IP/port info).
-#
+# CSC3002F Group Assignment 2025
 # Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
+
+
+"""
+GUI application for downloading from Seeder 
+Running and visualizing the downloading progress
+Converting to Seeder when requested
+"""
 
 import sys, traceback
 from PyQt6.QtWidgets import (
@@ -22,6 +23,7 @@ def main():
     tracker_addr = ("127.0.0.1", 12500)
     seeder_reference = []
 
+    # first have to input tracker ip and port
     usr_ans = input("Enter Tracker ip and port number seperated by spaces (eg 127.0.0.1 12500):")
     if usr_ans != "":
         usr_ans = usr_ans.split(" ")

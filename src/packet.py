@@ -2,8 +2,7 @@
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
 from socket import socket
-import math
-import logging
+import math, logging
 
 class File():
     #Class which represents the file entity and a method to generate a send rule for a particular file, given its size and the number of seeders available.

@@ -3,13 +3,7 @@
 
 from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from datetime import timedelta, datetime
-import threading
-import hashlib
-import json
-import os
-import time
-import struct
-import sys
+import threading, hashlib, json, os, time, struct, sys
 from packet import Request, File
 
 def main():

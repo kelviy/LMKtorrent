@@ -1,10 +1,9 @@
 #CSC3002F Group Assignment 2025
 #Owners: Kelvin Wei, Liam de Saldanha, Mark Du Preez
 
-import sys
+import sys, os
 from leacher import Leacher
 from seeder import Seeder
-import os
 
 def main():
     # 1. Input seeder and tracker details (have to start beforehand) - can be done with `auto_run.sh` and killed with `auto_run.sh kill`.
