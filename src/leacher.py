@@ -97,7 +97,7 @@ class Leacher:
 
     def request_file(self, file_name, progress_callback=None):
         #refresh seeders
-        self.get_seeder_list()
+        self.seeder_list = self.get_seeder_list()
 
         list_seeder_con = []
 
