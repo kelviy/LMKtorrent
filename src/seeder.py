@@ -5,6 +5,7 @@ from socket import AF_INET, SOCK_STREAM, SOCK_DGRAM, socket
 from datetime import timedelta, datetime
 import threading, hashlib, json, os, time, struct, sys
 from packet import Request, File
+from pathlib import Path
 
 """
 Seeder will send files chunks to the leecher when requested
@@ -134,7 +135,7 @@ class Seeder():
 
             # Reads section of file requested into memory.
             start_file_position = send_after
-            with open(f'data/{file_name}', mode='rb') as file:
+            with open(Path() / self.folder_path / file_name, mode='rb') as file:
                 file.seek(start_file_position)
                 for _ in range(num_chunks):
                     file_part = file.read(File.chunk_size)
