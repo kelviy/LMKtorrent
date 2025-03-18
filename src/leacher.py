@@ -104,13 +104,17 @@ class Leacher:
         # sends request to all potential seeders
         for ip, port in self.seeder_list:
             soc = socket(AF_INET, SOCK_STREAM)
-            soc.connect((ip, port))
+            soc.settimeout(1)
+            try:
+                soc.connect((ip, port))
 
-            soc.sendall(Request.REQUEST_CONNECTION.encode())
-            response = soc.recv(1024).decode()
+                soc.sendall(Request.REQUEST_CONNECTION.encode())
+                response = soc.recv(1024).decode()
 
-            if response == Request.CONNECTED:
-                list_seeder_con.append(soc)
+                if response == Request.CONNECTED:
+                    list_seeder_con.append(soc)
+            except Exception as e:
+                print(e)
 
         # Exits over the limit seeders.
         if len(list_seeder_con) > self.max_parallel_seeders:
