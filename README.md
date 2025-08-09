@@ -1,6 +1,8 @@
 # LMKtorrent
 CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due on 17 March 2025.
 
+<img width="896" height="724" alt="image" src="https://github.com/user-attachments/assets/13ff8c36-1a36-48f4-ba4f-39adb155d2f4" />
+
 **Group Members**
 - Kelvin Wei (WXXKEL001)
 - Liam de Saldanha (DSLLIA002)
@@ -15,6 +17,11 @@ CSC3002 – Networks Assignment 1 – 2025 Socket programming project. Due on 17
 5. Seeder Convertion will only occur when all files are downloaded into tmp folder. 
 
 > NOTE: The GUI will exit after confirmation of Switching to Seeder on Terminal. There is no way to go return. Do a rerun of GUI.py to download again.
+
+# Auto_Run Script
+Running `./auto_run.sh` will start seeder and tracker instances on loop back interface (127.0.0.1) on port 12500 nd 12501 respectively. Seeder will default to seeding ./data/ folder
+
+Killing the seeder and tracker servers can be done by passing the `kill` argument to the `auto_run.sh` script. `./auto_run.sh kill`
 
 # Manual Run
 
